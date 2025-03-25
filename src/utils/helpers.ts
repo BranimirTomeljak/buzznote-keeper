@@ -1,5 +1,5 @@
 
-import { Recording, Beehive, Location } from '@/types';
+import { Recording, Beehive, Location, PriorityLevel } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 
 // Generate a unique ID
@@ -73,4 +73,20 @@ export const sortByName = <T extends { name: string }>(
 // Check if the device is online
 export const isOnline = (): boolean => {
   return navigator.onLine;
+};
+
+// Get CSS classes for priority badges
+export const getPriorityBadgeStyles = (priority: PriorityLevel): string => {
+  switch (priority) {
+    case 'high':
+      return 'bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-medium';
+    case 'medium':
+      return 'bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium';
+    case 'low':
+      return 'bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium';
+    case 'solved':
+      return 'bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium';
+    default:
+      return 'bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs font-medium';
+  }
 };
