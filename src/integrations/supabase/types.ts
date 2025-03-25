@@ -9,7 +9,110 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      beehives: {
+        Row: {
+          created_at: string
+          id: string
+          location_id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          location_id: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location_id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beehives_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      locations: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      recordings: {
+        Row: {
+          audio_url: string
+          beehive_id: string
+          created_at: number
+          date: string
+          id: string
+          location_id: string
+          priority: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          audio_url: string
+          beehive_id: string
+          created_at: number
+          date: string
+          id: string
+          location_id: string
+          priority: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          audio_url?: string
+          beehive_id?: string
+          created_at?: number
+          date?: string
+          id?: string
+          location_id?: string
+          priority?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recordings_beehive_id_fkey"
+            columns: ["beehive_id"]
+            isOneToOne: false
+            referencedRelation: "beehives"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recordings_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

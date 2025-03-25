@@ -10,9 +10,18 @@ import {
 import { 
   generateId, 
   getFormattedDate, 
-  isBeehiveNameUnique 
+  isBeehiveNameUnique,
+  sortByName
 } from '@/utils/helpers';
 import { t } from '@/utils/translations';
+import { useSupabase } from './SupabaseContext';
+import { 
+  syncLocations,
+  syncBeehives,
+  syncRecordings,
+  deleteFromRemote,
+  SyncStatus
+} from '@/services/SyncService';
 
 interface AppContextType {
   // State
@@ -20,6 +29,9 @@ interface AppContextType {
   beehives: Beehive[];
   recordings: Recording[];
   activeTab: string;
+  syncStatus: SyncStatus;
+  searchTerm: string;
+  sortOrder: 'name-asc' | 'name-desc' | 'priority' | 'date';
   
   // Location actions
   addLocation: (name: string) => Promise<Location>;
@@ -43,6 +55,16 @@ interface AppContextType {
   // Helpers
   getLocationById: (id: string) => Location | undefined;
   getBeehiveById: (id: string) => Beehive | undefined;
+  
+  // Search and sorting
+  setSearchTerm: (term: string) => void;
+  setSortOrder: (order: 'name-asc' | 'name-desc' | 'priority' | 'date') => void;
+  
+  // Sync
+  syncData: (manual?: boolean) => Promise<void>;
+  getFilteredBeehives: (locationId: string) => Beehive[];
+  getRecordingsForLocation: (locationId: string) => Recording[];
+  getRecordingsForBeehive: (beehiveId: string) => Recording[];
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -53,6 +75,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [beehives, setBeehives] = useState<Beehive[]>([]);
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [activeTab, setActiveTab] = useState('locations');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortOrder, setSortOrder] = useState<'name-asc' | 'name-desc' | 'priority' | 'date'>('name-asc');
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>({
+    inProgress: false,
+    lastSynced: null,
+    error: null
+  });
+  
+  const { user } = useSupabase();
   
   // Load data from localStorage on init
   useEffect(() => {
@@ -73,6 +104,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     loadData();
   }, []);
   
+  // Auto-sync when user is logged in
+  useEffect(() => {
+    const autoSync = async () => {
+      if (user) {
+        await syncData(false); // Auto sync (not manual)
+      }
+    };
+    
+    if (user) {
+      autoSync();
+    }
+  }, [user]);
+  
   // Save data to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('buzznotes_locations', JSON.stringify(locations));
@@ -86,6 +130,74 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('buzznotes_recordings', JSON.stringify(recordings));
   }, [recordings]);
   
+  // Sync data with Supabase
+  const syncData = async (manual: boolean = true) => {
+    if (!user) return;
+    
+    setSyncStatus(prev => ({ ...prev, inProgress: true, error: null }));
+    
+    try {
+      // Sync locations
+      const { synced: syncedLocations, error: locationsError } = await syncLocations(
+        locations,
+        user.id,
+        manual
+      );
+      
+      if (locationsError) {
+        throw new Error(locationsError);
+      }
+      
+      // Sync beehives
+      const { synced: syncedBeehives, error: beehivesError } = await syncBeehives(
+        beehives,
+        user.id,
+        manual
+      );
+      
+      if (beehivesError) {
+        throw new Error(beehivesError);
+      }
+      
+      // Sync recordings
+      const { synced: syncedRecordings, error: recordingsError } = await syncRecordings(
+        recordings,
+        user.id,
+        manual
+      );
+      
+      if (recordingsError) {
+        throw new Error(recordingsError);
+      }
+      
+      // Update local state with synced data
+      setLocations(syncedLocations);
+      setBeehives(syncedBeehives);
+      setRecordings(syncedRecordings);
+      
+      setSyncStatus({
+        inProgress: false,
+        lastSynced: new Date(),
+        error: null
+      });
+      
+      if (manual) {
+        toast.success(t('syncSuccess'));
+      }
+    } catch (error: any) {
+      setSyncStatus({
+        inProgress: false,
+        lastSynced: syncStatus.lastSynced,
+        error: error.message
+      });
+      
+      // Only show toast for manual sync or errors
+      if (manual || error) {
+        toast.error(t('syncError') + ': ' + error.message);
+      }
+    }
+  };
+  
   // Location actions
   const addLocation = async (name: string): Promise<Location> => {
     const newLocation: Location = {
@@ -94,6 +206,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     
     setLocations(prev => [...prev, newLocation]);
+    
+    // Sync with Supabase if user is logged in
+    if (user) {
+      try {
+        await syncLocations([...locations, newLocation], user.id);
+      } catch (error) {
+        console.error('Error syncing new location:', error);
+      }
+    }
+    
     toast(t('locationCreated'), { duration: 1500 });
     return newLocation;
   };
@@ -104,6 +226,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         location.id === id ? { ...location, name } : location
       )
     );
+    
+    // Sync with Supabase if user is logged in
+    if (user) {
+      const updatedLocations = locations.map(location => 
+        location.id === id ? { ...location, name } : location
+      );
+      
+      try {
+        await syncLocations(updatedLocations, user.id);
+      } catch (error) {
+        console.error('Error syncing updated location:', error);
+      }
+    }
+    
     toast(t('locationUpdated'), { duration: 1500 });
   };
   
@@ -124,6 +260,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Delete location
     setLocations(prev => prev.filter(location => location.id !== id));
     
+    // Delete from Supabase if user is logged in
+    if (user) {
+      try {
+        // Delete the location from remote, cascading to beehives and recordings
+        await deleteFromRemote('location', id, user.id);
+      } catch (error) {
+        console.error('Error deleting location from Supabase:', error);
+      }
+    }
+    
     toast(t('locationDeleted'), { duration: 1500 });
   };
   
@@ -142,6 +288,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     
     setBeehives(prev => [...prev, newBeehive]);
+    
+    // Sync with Supabase if user is logged in
+    if (user) {
+      try {
+        await syncBeehives([...beehives, newBeehive], user.id);
+      } catch (error) {
+        console.error('Error syncing new beehive:', error);
+      }
+    }
+    
     toast(t('beehiveCreated'), { duration: 1500 });
     return newBeehive;
   };
@@ -166,6 +322,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       )
     );
     
+    // Sync with Supabase if user is logged in
+    if (user) {
+      const updatedBeehives = beehives.map(beehive => 
+        beehive.id === id ? { ...beehive, name } : beehive
+      );
+      
+      try {
+        await syncBeehives(updatedBeehives, user.id);
+      } catch (error) {
+        console.error('Error syncing updated beehive:', error);
+      }
+    }
+    
     toast(t('beehiveUpdated'), { duration: 1500 });
   };
   
@@ -177,6 +346,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     
     // Delete beehive
     setBeehives(prev => prev.filter(beehive => beehive.id !== id));
+    
+    // Delete from Supabase if user is logged in
+    if (user) {
+      try {
+        // Delete the beehive from remote, cascading to recordings
+        await deleteFromRemote('beehive', id, user.id);
+      } catch (error) {
+        console.error('Error deleting beehive from Supabase:', error);
+      }
+    }
     
     toast(t('beehiveDeleted'), { duration: 1500 });
   };
@@ -203,6 +382,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     
     setRecordings(prev => [...prev, newRecording]);
+    
+    // Sync with Supabase if user is logged in
+    if (user) {
+      try {
+        await syncRecordings([...recordings, newRecording], user.id);
+      } catch (error) {
+        console.error('Error syncing new recording:', error);
+      }
+    }
+    
     toast(t('recordingCreated'), { duration: 1500 });
     return newRecording;
   };
@@ -216,6 +405,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     
     setRecordings(prev => prev.filter(recording => recording.id !== id));
+    
+    // Delete from Supabase if user is logged in
+    if (user && recording) {
+      try {
+        await deleteFromRemote('recording', id, user.id);
+      } catch (error) {
+        console.error('Error deleting recording from Supabase:', error);
+      }
+    }
+    
     toast(t('recordingDeleted'), { duration: 1500 });
   };
   
@@ -225,6 +424,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         recording.id === id ? { ...recording, priority } : recording
       )
     );
+    
+    // Sync with Supabase if user is logged in
+    if (user) {
+      const updatedRecordings = recordings.map(recording => 
+        recording.id === id ? { ...recording, priority } : recording
+      );
+      
+      try {
+        await syncRecordings(updatedRecordings, user.id);
+      } catch (error) {
+        console.error('Error syncing updated recording:', error);
+      }
+    }
     
     toast(t('priorityUpdated'), { duration: 1500 });
   };
@@ -238,12 +450,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return beehives.find(beehive => beehive.id === id);
   };
   
+  // Filtered and sorted data
+  const getFilteredBeehives = (locationId: string): Beehive[] => {
+    const filteredBeehives = beehives.filter(beehive => 
+      beehive.locationId === locationId &&
+      beehive.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    
+    if (sortOrder === 'name-asc') {
+      return sortByName(filteredBeehives, 'asc');
+    } else if (sortOrder === 'name-desc') {
+      return sortByName(filteredBeehives, 'desc');
+    }
+    
+    return filteredBeehives;
+  };
+  
+  const getRecordingsForLocation = (locationId: string): Recording[] => {
+    const beehiveIds = beehives
+      .filter(beehive => beehive.locationId === locationId)
+      .map(beehive => beehive.id);
+    
+    return recordings.filter(recording => beehiveIds.includes(recording.beehiveId));
+  };
+  
+  const getRecordingsForBeehive = (beehiveId: string): Recording[] => {
+    return recordings.filter(recording => recording.beehiveId === beehiveId);
+  };
+  
   const contextValue: AppContextType = {
     // State
     locations,
     beehives,
     recordings,
     activeTab,
+    syncStatus,
+    searchTerm,
+    sortOrder,
     
     // Location actions
     addLocation,
@@ -266,7 +509,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     
     // Helpers
     getLocationById,
-    getBeehiveById
+    getBeehiveById,
+    
+    // Search and sorting
+    setSearchTerm,
+    setSortOrder,
+    
+    // Sync
+    syncData,
+    getFilteredBeehives,
+    getRecordingsForLocation,
+    getRecordingsForBeehive
   };
   
   return (

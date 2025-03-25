@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Mic, Plus, ArrowLeft } from 'lucide-react';
+import { Mic, Plus, ArrowLeft, Search, RefreshCw, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -14,6 +15,10 @@ import RecordingCard from './RecordingCard';
 import VoiceRecorder from './VoiceRecorder';
 import { sortByDateDesc, sortByPriorityAndDate } from '@/utils/helpers';
 import { t } from '@/utils/translations';
+import { useSupabase } from '@/contexts/SupabaseContext';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from './ui/skeleton';
 
 const Dashboard: React.FC = () => {
   const { 
@@ -26,8 +31,20 @@ const Dashboard: React.FC = () => {
     addBeehive,
     addRecording,
     getLocationById,
-    getBeehiveById
+    getBeehiveById,
+    syncData,
+    syncStatus,
+    searchTerm,
+    setSearchTerm,
+    sortOrder,
+    setSortOrder,
+    getFilteredBeehives,
+    getRecordingsForLocation
   } = useApp();
+  
+  const { user, signOut, loading: authLoading } = useSupabase();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
   const [showAddLocation, setShowAddLocation] = useState(false);
@@ -40,6 +57,14 @@ const Dashboard: React.FC = () => {
   const [selectedBeehiveForRecording, setSelectedBeehiveForRecording] = useState<string>('');
   const [selectedLocationForRecording, setSelectedLocationForRecording] = useState<string>('');
   const [recordingStep, setRecordingStep] = useState<'select' | 'record'>('select');
+  const [syncing, setSyncing] = useState(false);
+  
+  // Check if user is authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/auth');
+    }
+  }, [user, authLoading, navigate]);
   
   // Recent and Priority views
   const recentRecordings = sortByDateDesc(recordings);
@@ -47,8 +72,15 @@ const Dashboard: React.FC = () => {
   
   // Get beehives for selected location
   const beehivesInLocation = selectedLocationId
-    ? beehives.filter(beehive => beehive.locationId === selectedLocationId)
+    ? getFilteredBeehives(selectedLocationId)
     : [];
+  
+  // Get recordings for selected location in tabs
+  const locationRecordings = selectedLocationId
+    ? getRecordingsForLocation(selectedLocationId)
+    : [];
+  const recentLocationRecordings = sortByDateDesc(locationRecordings);
+  const priorityLocationRecordings = sortByPriorityAndDate(locationRecordings);
     
   // Handle location selection
   const handleLocationSelect = (locationId: string) => {
@@ -137,8 +169,35 @@ const Dashboard: React.FC = () => {
     }
   };
   
+  // Handle manual sync
+  const handleSync = async () => {
+    setSyncing(true);
+    await syncData(true);
+    setSyncing(false);
+  };
+  
+  // Handle sign out
+  const handleSignOut = async () => {
+    await signOut();
+    toast({
+      title: t('signedOut'),
+      description: t('signedOutMessage'),
+    });
+    navigate('/auth');
+  };
+  
   // Render locations list
   const renderLocations = () => {
+    if (authLoading) {
+      return (
+        <div className="space-y-4">
+          {[1, 2, 3].map(i => (
+            <Skeleton key={i} className="h-20 w-full" />
+          ))}
+        </div>
+      );
+    }
+    
     if (locations.length === 0) {
       return (
         <div className="text-center py-8">
@@ -174,6 +233,16 @@ const Dashboard: React.FC = () => {
   const renderBeehives = () => {
     const location = getLocationById(selectedLocationId!);
     
+    if (authLoading) {
+      return (
+        <div className="space-y-4">
+          {[1, 2, 3].map(i => (
+            <Skeleton key={i} className="h-20 w-full" />
+          ))}
+        </div>
+      );
+    }
+    
     return (
       <div>
         <div className="flex items-center mb-6">
@@ -181,6 +250,31 @@ const Dashboard: React.FC = () => {
             <ArrowLeft size={16} />
           </Button>
           <h2 className="text-xl font-semibold">{location?.name}</h2>
+        </div>
+        
+        <div className="flex justify-between items-center mb-4">
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={t('searchBeehives')}
+              className="pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          
+          <Select
+            value={sortOrder}
+            onValueChange={(value: any) => setSortOrder(value)}
+          >
+            <SelectTrigger className="w-[180px] ml-2">
+              <SelectValue placeholder={t('sort')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name-asc">{t('nameAsc')}</SelectItem>
+              <SelectItem value="name-desc">{t('nameDesc')}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         
         {beehivesInLocation.length === 0 ? (
@@ -208,12 +302,43 @@ const Dashboard: React.FC = () => {
             </Button>
           </div>
         )}
+        
+        {/* Location Recordings Tabs */}
+        {beehivesInLocation.length > 0 && (
+          <div className="mt-8">
+            <h3 className="text-lg font-semibold mb-4">{t('recordings')}</h3>
+            <Tabs defaultValue="recent" className="w-full">
+              <TabsList className="grid grid-cols-2 mb-4">
+                <TabsTrigger value="recent">{t('recentNotesTab')}</TabsTrigger>
+                <TabsTrigger value="priority">{t('priorityNotesTab')}</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="recent" className="mt-0">
+                {renderRecordings(recentLocationRecordings)}
+              </TabsContent>
+              
+              <TabsContent value="priority" className="mt-0">
+                {renderRecordings(priorityLocationRecordings)}
+              </TabsContent>
+            </Tabs>
+          </div>
+        )}
       </div>
     );
   };
   
   // Render recordings based on filter
   const renderRecordings = (filteredRecordings: typeof recordings) => {
+    if (authLoading) {
+      return (
+        <div className="space-y-4">
+          {[1, 2, 3].map(i => (
+            <Skeleton key={i} className="h-20 w-full" />
+          ))}
+        </div>
+      );
+    }
+    
     if (filteredRecordings.length === 0) {
       return (
         <div className="text-center py-8">
@@ -235,10 +360,43 @@ const Dashboard: React.FC = () => {
     );
   };
   
+  if (authLoading) {
+    return (
+      <div className="page-container">
+        <div className="flex justify-center items-center min-h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return null; // Will be redirected by useEffect
+  }
+  
   return (
     <div className="page-container">
-      <header className="mb-6">
+      <header className="mb-6 flex justify-between items-center">
         <h1 className="text-2xl font-bold">{t('appName')}</h1>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleSync}
+            disabled={syncing || syncStatus.inProgress}
+          >
+            <RefreshCw size={16} className={`mr-2 ${(syncing || syncStatus.inProgress) ? 'animate-spin' : ''}`} />
+            {t('sync')}
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleSignOut}
+          >
+            <LogOut size={16} className="mr-2" />
+            {t('signOut')}
+          </Button>
+        </div>
       </header>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -369,8 +527,14 @@ const Dashboard: React.FC = () => {
                   <Button
                     variant="outline"
                     onClick={() => {
-                      setShowRecorder(false);
-                      setShowAddBeehive(true);
+                      if (locations.length === 0) {
+                        setShowRecorder(false);
+                        setShowAddLocation(true);
+                      } else {
+                        setSelectedLocationForBeehive(locations[0].id);
+                        setShowRecorder(false);
+                        setShowAddBeehive(true);
+                      }
                     }}
                     className="text-sm"
                   >
