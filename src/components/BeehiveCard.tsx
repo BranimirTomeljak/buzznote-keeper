@@ -124,7 +124,7 @@ const BeehiveCard: React.FC<BeehiveCardProps> = ({ beehive, onOpenRecorder }) =>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </Dialog>
+      </AlertDialog>
     </>
   );
 };
