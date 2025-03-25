@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Mic, Plus, ArrowLeft, Search, RefreshCw, LogOut } from 'lucide-react';
+import { Mic, Plus, ArrowLeft, Search, RefreshCw, LogOut, MapPin, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -186,6 +185,24 @@ const Dashboard: React.FC = () => {
     navigate('/auth');
   };
   
+  // Action buttons handlers
+  const handleAddLocationClick = () => {
+    setShowAddLocation(true);
+  };
+  
+  const handleAddBeehiveClick = () => {
+    if (locations.length === 0) {
+      setShowAddLocation(true);
+    } else {
+      setSelectedLocationForBeehive(locations[0].id);
+      setShowAddBeehive(true);
+    }
+  };
+  
+  const handleAddRecordingClick = () => {
+    handleStartRecordingFlow();
+  };
+  
   // Render locations list
   const renderLocations = () => {
     if (authLoading) {
@@ -364,7 +381,7 @@ const Dashboard: React.FC = () => {
     return (
       <div className="page-container">
         <div className="flex justify-center items-center min-h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-honey"></div>
         </div>
       </div>
     );
@@ -376,14 +393,15 @@ const Dashboard: React.FC = () => {
   
   return (
     <div className="page-container">
-      <header className="mb-6 flex justify-between items-center">
-        <h1 className="text-2xl font-bold">{t('appName')}</h1>
+      <header className="mb-8 flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-bee-brown">{t('appName')}</h1>
         <div className="flex gap-2">
           <Button 
             variant="outline" 
             size="sm" 
             onClick={handleSync}
             disabled={syncing || syncStatus.inProgress}
+            className="text-bee-brown border-bee-brown hover:bg-bee-brown/10"
           >
             <RefreshCw size={16} className={`mr-2 ${(syncing || syncStatus.inProgress) ? 'animate-spin' : ''}`} />
             {t('sync')}
@@ -392,6 +410,7 @@ const Dashboard: React.FC = () => {
             variant="ghost" 
             size="sm" 
             onClick={handleSignOut}
+            className="text-bee-brown hover:bg-bee-brown/10"
           >
             <LogOut size={16} className="mr-2" />
             {t('signOut')}
@@ -399,11 +418,36 @@ const Dashboard: React.FC = () => {
         </div>
       </header>
       
+      {/* Quick action buttons */}
+      <div className="grid grid-cols-3 gap-4 mb-8">
+        <button 
+          className="action-button" 
+          onClick={handleAddLocationClick}
+        >
+          <MapPin size={18} />
+          <span>{t('newLocation')}</span>
+        </button>
+        <button 
+          className="action-button" 
+          onClick={handleAddBeehiveClick}
+        >
+          <FileText size={18} />
+          <span>{t('newBeehive')}</span>
+        </button>
+        <button 
+          className="action-button" 
+          onClick={handleAddRecordingClick}
+        >
+          <Mic size={18} />
+          <span>{t('recordNew')}</span>
+        </button>
+      </div>
+      
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-3 mb-6">
-          <TabsTrigger value="locations">{t('locationsTab')}</TabsTrigger>
-          <TabsTrigger value="recent">{t('recentNotesTab')}</TabsTrigger>
-          <TabsTrigger value="priority">{t('priorityNotesTab')}</TabsTrigger>
+        <TabsList className="grid grid-cols-3 mb-6 bg-hive-light">
+          <TabsTrigger value="locations" className="data-[state=active]:bg-honey data-[state=active]:text-bee-black">{t('locationsTab')}</TabsTrigger>
+          <TabsTrigger value="recent" className="data-[state=active]:bg-honey data-[state=active]:text-bee-black">{t('recentNotesTab')}</TabsTrigger>
+          <TabsTrigger value="priority" className="data-[state=active]:bg-honey data-[state=active]:text-bee-black">{t('priorityNotesTab')}</TabsTrigger>
         </TabsList>
         
         <TabsContent value="locations" className="mt-0">
@@ -429,41 +473,41 @@ const Dashboard: React.FC = () => {
       
       {/* Add Location Dialog */}
       <Dialog open={showAddLocation} onOpenChange={setShowAddLocation}>
-        <DialogContent>
+        <DialogContent className="bg-white border-honey/30">
           <DialogHeader>
-            <DialogTitle>{t('newLocation')}</DialogTitle>
+            <DialogTitle className="text-bee-brown">{t('newLocation')}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div>
-              <Label htmlFor="locationName">{t('name')}</Label>
+              <Label htmlFor="locationName" className="text-bee-brown">{t('name')}</Label>
               <Input
                 id="locationName"
                 value={newLocationName}
                 onChange={(e) => setNewLocationName(e.target.value)}
-                className="mt-2"
+                className="mt-2 border-honey/30 focus-visible:ring-honey"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={handleAddLocation}>{t('create')}</Button>
+            <Button onClick={handleAddLocation} className="bg-honey hover:bg-honey-dark text-bee-black">{t('create')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
       
       {/* Add Beehive Dialog */}
       <Dialog open={showAddBeehive} onOpenChange={setShowAddBeehive}>
-        <DialogContent>
+        <DialogContent className="bg-white border-honey/30">
           <DialogHeader>
-            <DialogTitle>{t('newBeehive')}</DialogTitle>
+            <DialogTitle className="text-bee-brown">{t('newBeehive')}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div>
-              <Label htmlFor="locationSelect">{t('location')}</Label>
+              <Label htmlFor="locationSelect" className="text-bee-brown">{t('location')}</Label>
               <Select
                 value={selectedLocationForBeehive}
                 onValueChange={setSelectedLocationForBeehive}
               >
-                <SelectTrigger id="locationSelect" className="mt-2">
+                <SelectTrigger id="locationSelect" className="mt-2 border-honey/30 focus:ring-honey">
                   <SelectValue placeholder={t('selectBeehive')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -476,12 +520,12 @@ const Dashboard: React.FC = () => {
               </Select>
             </div>
             <div>
-              <Label htmlFor="beehiveName">{t('name')}</Label>
+              <Label htmlFor="beehiveName" className="text-bee-brown">{t('name')}</Label>
               <Input
                 id="beehiveName"
                 value={newBeehiveName}
                 onChange={(e) => setNewBeehiveName(e.target.value)}
-                className="mt-2"
+                className="mt-2 border-honey/30 focus-visible:ring-honey"
               />
             </div>
           </div>
@@ -489,6 +533,7 @@ const Dashboard: React.FC = () => {
             <Button 
               onClick={handleAddBeehive}
               disabled={!selectedLocationForBeehive || !newBeehiveName.trim()}
+              className="bg-honey hover:bg-honey-dark text-bee-black"
             >
               {t('create')}
             </Button>
@@ -500,18 +545,18 @@ const Dashboard: React.FC = () => {
       {showRecorder && (
         recordingStep === 'select' ? (
           <Dialog open={showRecorder} onOpenChange={setShowRecorder}>
-            <DialogContent>
+            <DialogContent className="bg-white border-honey/30">
               <DialogHeader>
-                <DialogTitle>{t('selectBeehive')}</DialogTitle>
+                <DialogTitle className="text-bee-brown">{t('selectBeehive')}</DialogTitle>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div>
-                  <Label htmlFor="beehiveSelect">{t('beehive')}</Label>
+                  <Label htmlFor="beehiveSelect" className="text-bee-brown">{t('beehive')}</Label>
                   <Select
                     value={selectedBeehiveId}
                     onValueChange={setSelectedBeehiveId}
                   >
-                    <SelectTrigger id="beehiveSelect" className="mt-2">
+                    <SelectTrigger id="beehiveSelect" className="mt-2 border-honey/30 focus:ring-honey">
                       <SelectValue placeholder={t('selectBeehive')} />
                     </SelectTrigger>
                     <SelectContent>
@@ -536,7 +581,7 @@ const Dashboard: React.FC = () => {
                         setShowAddBeehive(true);
                       }
                     }}
-                    className="text-sm"
+                    className="text-sm border-honey/30 text-bee-brown hover:bg-honey/10"
                   >
                     <Plus size={14} className="mr-1" /> {t('newBeehive')}
                   </Button>
@@ -546,6 +591,7 @@ const Dashboard: React.FC = () => {
                 <Button 
                   onClick={handleBeehiveSelect}
                   disabled={!selectedBeehiveId}
+                  className="bg-honey hover:bg-honey-dark text-bee-black"
                 >
                   {t('recordNew')}
                 </Button>

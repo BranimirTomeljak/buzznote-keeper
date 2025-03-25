@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -58,6 +57,21 @@ export default {
 					medium: '#FFA726',
 					low: '#FFD54F',
 					solved: '#66BB6A'
+				},
+				honey: {
+					light: '#ffd54f',
+					DEFAULT: '#ffb300',
+					dark: '#ff8f00'
+				},
+				bee: {
+					brown: '#8d6e63',
+					yellow: '#ffca28',
+					black: '#424242'
+				},
+				hive: {
+					light: '#e6d2c3',
+					DEFAULT: '#d7ccc8',
+					dark: '#a1887f'
 				}
 			},
 			borderRadius: {
@@ -108,6 +122,9 @@ export default {
 				'slide-in-right': 'slide-in-right 0.3s ease-out',
 				'slide-in-up': 'slide-in-up 0.3s ease-out',
 				'pulse': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+			},
+			backgroundImage: {
+				'honeycomb-pattern': "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5L17.5 17.5L5 30L17.5 42.5L30 55L42.5 42.5L55 30L42.5 17.5L30 5Z' fill='none' stroke='%23d7ccc855' stroke-width='2'/%3E%3C/svg%3E\")",
 			}
 		}
 	},
