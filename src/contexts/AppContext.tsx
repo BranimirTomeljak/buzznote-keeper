@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { 
@@ -40,7 +39,7 @@ interface AppContextType {
   
   // Beehive actions
   addBeehive: (name: string, locationId: string) => Promise<Beehive>;
-  updateBeehive: (id: string, name: string) => Promise<void>;
+  updateBeehive: (id: string, name: string, locationId?: string) => Promise<void>;
   deleteBeehive: (id: string) => Promise<void>;
   getBeehivesByLocation: (locationId: string) => Beehive[];
   
@@ -302,7 +301,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newBeehive;
   };
   
-  const updateBeehive = async (id: string, name: string): Promise<void> => {
+  const updateBeehive = async (id: string, name: string, locationId?: string): Promise<void> => {
     const beehive = beehives.find(b => b.id === id);
     
     if (!beehive) {
@@ -310,22 +309,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       throw new Error('Beehive not found');
     }
     
+    // Use the provided locationId or keep the existing one
+    const newLocationId = locationId || beehive.locationId;
+    
     // Check if name is unique within location
-    if (!isBeehiveNameUnique(beehives, name, beehive.locationId, id)) {
+    if (!isBeehiveNameUnique(beehives, name, newLocationId, id)) {
       toast.error(t('nameExists'), { duration: 1500 });
       throw new Error(t('nameExists'));
     }
     
     setBeehives(prev => 
       prev.map(beehive => 
-        beehive.id === id ? { ...beehive, name } : beehive
+        beehive.id === id ? { ...beehive, name, locationId: newLocationId } : beehive
       )
     );
     
     // Sync with Supabase if user is logged in
     if (user) {
       const updatedBeehives = beehives.map(beehive => 
-        beehive.id === id ? { ...beehive, name } : beehive
+        beehive.id === id ? { ...beehive, name, locationId: newLocationId } : beehive
       );
       
       try {

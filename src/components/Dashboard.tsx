@@ -38,7 +38,7 @@ const Dashboard: React.FC = () => {
     sortOrder,
     setSortOrder,
     getFilteredBeehives,
-    getRecordingsForLocation
+    getRecordingsForBeehive
   } = useApp();
   
   const { user, signOut, loading: authLoading } = useSupabase();
@@ -46,16 +46,15 @@ const Dashboard: React.FC = () => {
   const { toast } = useToast();
   
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+  const [selectedBeehiveId, setSelectedBeehiveId] = useState<string | null>(null);
   const [showAddLocation, setShowAddLocation] = useState(false);
   const [showAddBeehive, setShowAddBeehive] = useState(false);
   const [showRecorder, setShowRecorder] = useState(false);
   const [newLocationName, setNewLocationName] = useState('');
   const [newBeehiveName, setNewBeehiveName] = useState('');
-  const [selectedBeehiveId, setSelectedBeehiveId] = useState<string>('');
   const [selectedLocationForBeehive, setSelectedLocationForBeehive] = useState<string>('');
   const [selectedBeehiveForRecording, setSelectedBeehiveForRecording] = useState<string>('');
   const [selectedLocationForRecording, setSelectedLocationForRecording] = useState<string>('');
-  const [recordingStep, setRecordingStep] = useState<'select' | 'record'>('select');
   const [syncing, setSyncing] = useState(false);
   
   // Check if user is authenticated
@@ -74,21 +73,31 @@ const Dashboard: React.FC = () => {
     ? getFilteredBeehives(selectedLocationId)
     : [];
   
-  // Get recordings for selected location in tabs
-  const locationRecordings = selectedLocationId
-    ? getRecordingsForLocation(selectedLocationId)
+  // Get recordings for selected beehive
+  const beehiveRecordings = selectedBeehiveId
+    ? getRecordingsForBeehive(selectedBeehiveId)
     : [];
-  const recentLocationRecordings = sortByDateDesc(locationRecordings);
-  const priorityLocationRecordings = sortByPriorityAndDate(locationRecordings);
+  const recentBeehiveRecordings = sortByDateDesc(beehiveRecordings);
+  const priorityBeehiveRecordings = sortByPriorityAndDate(beehiveRecordings);
     
   // Handle location selection
   const handleLocationSelect = (locationId: string) => {
     setSelectedLocationId(locationId);
+    setSelectedBeehiveId(null);
+  };
+  
+  // Handle beehive selection
+  const handleBeehiveSelect = (beehiveId: string) => {
+    setSelectedBeehiveId(beehiveId);
   };
   
   // Handle back button
   const handleBack = () => {
-    setSelectedLocationId(null);
+    if (selectedBeehiveId) {
+      setSelectedBeehiveId(null);
+    } else {
+      setSelectedLocationId(null);
+    }
   };
   
   // Handle add location
@@ -120,52 +129,10 @@ const Dashboard: React.FC = () => {
     setShowRecorder(true);
   };
   
-  // Handle recording selection step
-  const handleStartRecordingFlow = () => {
-    setRecordingStep('select');
-    setSelectedBeehiveId('');
-    
-    // If there are no beehives, show add beehive dialog directly
-    if (beehives.length === 0) {
-      if (locations.length === 0) {
-        setShowAddLocation(true);
-      } else {
-        setSelectedLocationForBeehive(locations[0].id);
-        setShowAddBeehive(true);
-      }
-      return;
-    }
-    
-    // If user is viewing a location, set default beehive from that location
-    if (selectedLocationId && beehivesInLocation.length > 0) {
-      setSelectedBeehiveId(beehivesInLocation[0].id);
-      setSelectedLocationForBeehive(selectedLocationId);
-    } else if (beehives.length > 0) {
-      // Otherwise set the first beehive as default
-      setSelectedBeehiveId(beehives[0].id);
-      setSelectedLocationForBeehive(beehives[0].locationId);
-    }
-    
-    setShowRecorder(true);
-  };
-  
   // Handle recording completion
   const handleRecordingComplete = async (audioUrl: string, priority: PriorityLevel) => {
     await addRecording(audioUrl, selectedBeehiveForRecording, selectedLocationForRecording, priority);
     setShowRecorder(false);
-    setRecordingStep('select');
-  };
-  
-  // Handle beehive selection for recording
-  const handleBeehiveSelect = () => {
-    if (selectedBeehiveId) {
-      const beehive = getBeehiveById(selectedBeehiveId);
-      if (beehive) {
-        setSelectedBeehiveForRecording(beehive.id);
-        setSelectedLocationForRecording(beehive.locationId);
-        setRecordingStep('record');
-      }
-    }
   };
   
   // Handle manual sync
@@ -200,7 +167,36 @@ const Dashboard: React.FC = () => {
   };
   
   const handleAddRecordingClick = () => {
-    handleStartRecordingFlow();
+    if (beehives.length === 0) {
+      if (locations.length === 0) {
+        setShowAddLocation(true);
+      } else {
+        setSelectedLocationForBeehive(locations[0].id);
+        setShowAddBeehive(true);
+      }
+      return;
+    }
+    
+    // If user is viewing a beehive, use that beehive
+    if (selectedBeehiveId) {
+      const beehive = getBeehiveById(selectedBeehiveId);
+      if (beehive) {
+        handleOpenRecorder(beehive.id, beehive.locationId);
+      }
+      return;
+    }
+    
+    // If user is viewing a location, use the first beehive from that location
+    if (selectedLocationId && beehivesInLocation.length > 0) {
+      handleOpenRecorder(beehivesInLocation[0].id, selectedLocationId);
+      return;
+    }
+    
+    // Otherwise use the first beehive
+    if (beehives.length > 0) {
+      const beehive = beehives[0];
+      handleOpenRecorder(beehive.id, beehive.locationId);
+    }
   };
   
   // Render locations list
@@ -218,7 +214,7 @@ const Dashboard: React.FC = () => {
     if (locations.length === 0) {
       return (
         <div className="text-center py-8">
-          <p className="text-muted-foreground mb-4">{t('noData')}</p>
+          <p className="text-muted-foreground mb-4">{t('noLocations')}</p>
           <Button onClick={() => setShowAddLocation(true)} className="glass-panel">
             <Plus size={16} className="mr-2" /> {t('newLocation')}
           </Button>
@@ -288,15 +284,15 @@ const Dashboard: React.FC = () => {
               <SelectValue placeholder={t('sort')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="name-asc">{t('nameAsc')}</SelectItem>
-              <SelectItem value="name-desc">{t('nameDesc')}</SelectItem>
+              <SelectItem value="name-asc">{t('nameAscending')}</SelectItem>
+              <SelectItem value="name-desc">{t('nameDescending')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
         
         {beehivesInLocation.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-muted-foreground mb-4">{t('noData')}</p>
+            <p className="text-muted-foreground mb-4">{t('noBeehives')}</p>
             <Button onClick={() => { setSelectedLocationForBeehive(selectedLocationId!); setShowAddBeehive(true); }}>
               <Plus size={16} className="mr-2" /> {t('newBeehive')}
             </Button>
@@ -308,6 +304,7 @@ const Dashboard: React.FC = () => {
                 key={beehive.id} 
                 beehive={beehive}
                 onOpenRecorder={handleOpenRecorder}
+                onBeehiveSelect={handleBeehiveSelect}
               />
             ))}
             <Button 
@@ -319,27 +316,55 @@ const Dashboard: React.FC = () => {
             </Button>
           </div>
         )}
-        
-        {/* Location Recordings Tabs */}
-        {beehivesInLocation.length > 0 && (
-          <div className="mt-8">
-            <h3 className="text-lg font-semibold mb-4">{t('recordings')}</h3>
-            <Tabs defaultValue="recent" className="w-full">
-              <TabsList className="grid grid-cols-2 mb-4">
-                <TabsTrigger value="recent">{t('recentNotesTab')}</TabsTrigger>
-                <TabsTrigger value="priority">{t('priorityNotesTab')}</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="recent" className="mt-0">
-                {renderRecordings(recentLocationRecordings)}
-              </TabsContent>
-              
-              <TabsContent value="priority" className="mt-0">
-                {renderRecordings(priorityLocationRecordings)}
-              </TabsContent>
-            </Tabs>
+      </div>
+    );
+  };
+  
+  // Render recordings for a selected beehive
+  const renderBeehiveDetail = () => {
+    const beehive = getBeehiveById(selectedBeehiveId!);
+    const location = beehive ? getLocationById(beehive.locationId) : null;
+    
+    if (!beehive) return null;
+    
+    return (
+      <div>
+        <div className="flex items-center mb-6">
+          <Button variant="ghost" size="sm" onClick={handleBack} className="mr-2">
+            <ArrowLeft size={16} />
+          </Button>
+          <div>
+            <h2 className="text-xl font-semibold">{beehive.name}</h2>
+            {location && <p className="text-sm text-muted-foreground">{location.name}</p>}
           </div>
-        )}
+        </div>
+        
+        <div className="mt-4">
+          <Tabs defaultValue="recent" className="w-full">
+            <TabsList className="grid grid-cols-2 mb-4">
+              <TabsTrigger value="recent">{t('recentRecordings')}</TabsTrigger>
+              <TabsTrigger value="priority">{t('priorityRecordings')}</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="recent" className="mt-0">
+              {renderRecordings(recentBeehiveRecordings)}
+            </TabsContent>
+            
+            <TabsContent value="priority" className="mt-0">
+              {renderRecordings(priorityBeehiveRecordings)}
+            </TabsContent>
+          </Tabs>
+        </div>
+        
+        <div className="mt-6 flex justify-center">
+          <Button
+            onClick={() => handleOpenRecorder(beehive.id, beehive.locationId)}
+            className="record-button px-6 py-2"
+          >
+            <Mic size={18} className="mr-2" />
+            {t('recordNew')}
+          </Button>
+        </div>
       </div>
     );
   };
@@ -370,7 +395,7 @@ const Dashboard: React.FC = () => {
           <RecordingCard 
             key={recording.id} 
             recording={recording}
-            showBeehive={true}
+            showBeehive={!selectedBeehiveId}
           />
         ))}
       </div>
@@ -443,30 +468,34 @@ const Dashboard: React.FC = () => {
         </button>
       </div>
       
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-3 mb-6 bg-hive-light">
-          <TabsTrigger value="locations" className="data-[state=active]:bg-honey data-[state=active]:text-bee-black">{t('locationsTab')}</TabsTrigger>
-          <TabsTrigger value="recent" className="data-[state=active]:bg-honey data-[state=active]:text-bee-black">{t('recentNotesTab')}</TabsTrigger>
-          <TabsTrigger value="priority" className="data-[state=active]:bg-honey data-[state=active]:text-bee-black">{t('priorityNotesTab')}</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="locations" className="mt-0">
-          {selectedLocationId ? renderBeehives() : renderLocations()}
-        </TabsContent>
-        
-        <TabsContent value="recent" className="mt-0">
-          {renderRecordings(recentRecordings)}
-        </TabsContent>
-        
-        <TabsContent value="priority" className="mt-0">
-          {renderRecordings(priorityRecordings)}
-        </TabsContent>
-      </Tabs>
+      {selectedBeehiveId ? (
+        renderBeehiveDetail()
+      ) : (
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid grid-cols-3 mb-6 bg-hive-light">
+            <TabsTrigger value="locations" className="data-[state=active]:bg-honey data-[state=active]:text-bee-black">{t('locations')}</TabsTrigger>
+            <TabsTrigger value="recent" className="data-[state=active]:bg-honey data-[state=active]:text-bee-black">{t('recent')}</TabsTrigger>
+            <TabsTrigger value="priority" className="data-[state=active]:bg-honey data-[state=active]:text-bee-black">{t('priority')}</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="locations" className="mt-0">
+            {selectedLocationId ? renderBeehives() : renderLocations()}
+          </TabsContent>
+          
+          <TabsContent value="recent" className="mt-0">
+            {renderRecordings(recentRecordings)}
+          </TabsContent>
+          
+          <TabsContent value="priority" className="mt-0">
+            {renderRecordings(priorityRecordings)}
+          </TabsContent>
+        </Tabs>
+      )}
       
       {/* Floating Record Button */}
       <Button
         className="fixed bottom-6 right-6 rounded-full w-14 h-14 record-button"
-        onClick={handleStartRecordingFlow}
+        onClick={handleAddRecordingClick}
       >
         <Mic size={20} />
       </Button>
@@ -508,7 +537,7 @@ const Dashboard: React.FC = () => {
                 onValueChange={setSelectedLocationForBeehive}
               >
                 <SelectTrigger id="locationSelect" className="mt-2 border-honey/30 focus:ring-honey">
-                  <SelectValue placeholder={t('selectBeehive')} />
+                  <SelectValue placeholder={t('selectLocation')} />
                 </SelectTrigger>
                 <SelectContent>
                   {locations.map(location => (
@@ -541,71 +570,13 @@ const Dashboard: React.FC = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Recording Flow */}
+      {/* Recording Interface */}
       {showRecorder && (
-        recordingStep === 'select' ? (
-          <Dialog open={showRecorder} onOpenChange={setShowRecorder}>
-            <DialogContent className="bg-white border-honey/30">
-              <DialogHeader>
-                <DialogTitle className="text-bee-brown">{t('selectBeehive')}</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div>
-                  <Label htmlFor="beehiveSelect" className="text-bee-brown">{t('beehive')}</Label>
-                  <Select
-                    value={selectedBeehiveId}
-                    onValueChange={setSelectedBeehiveId}
-                  >
-                    <SelectTrigger id="beehiveSelect" className="mt-2 border-honey/30 focus:ring-honey">
-                      <SelectValue placeholder={t('selectBeehive')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {beehives.map(beehive => (
-                        <SelectItem key={beehive.id} value={beehive.id}>
-                          {beehive.name} ({getLocationById(beehive.locationId)?.name})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex justify-center mt-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      if (locations.length === 0) {
-                        setShowRecorder(false);
-                        setShowAddLocation(true);
-                      } else {
-                        setSelectedLocationForBeehive(locations[0].id);
-                        setShowRecorder(false);
-                        setShowAddBeehive(true);
-                      }
-                    }}
-                    className="text-sm border-honey/30 text-bee-brown hover:bg-honey/10"
-                  >
-                    <Plus size={14} className="mr-1" /> {t('newBeehive')}
-                  </Button>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button 
-                  onClick={handleBeehiveSelect}
-                  disabled={!selectedBeehiveId}
-                  className="bg-honey hover:bg-honey-dark text-bee-black"
-                >
-                  {t('recordNew')}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        ) : (
-          // Recording interface
-          <VoiceRecorder
-            onRecordingComplete={handleRecordingComplete}
-            onCancel={() => setShowRecorder(false)}
-            beehiveName={getBeehiveById(selectedBeehiveForRecording)?.name || ''}
-          />
-        )
+        <VoiceRecorder
+          onRecordingComplete={handleRecordingComplete}
+          onCancel={() => setShowRecorder(false)}
+          beehiveName={getBeehiveById(selectedBeehiveForRecording)?.name || ''}
+        />
       )}
     </div>
   );

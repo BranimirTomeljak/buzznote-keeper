@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Beehive } from '@/types';
 import { useApp } from '@/contexts/AppContext';
 import { t } from '@/utils/translations';
@@ -14,20 +15,26 @@ import { t } from '@/utils/translations';
 interface BeehiveCardProps {
   beehive: Beehive;
   onOpenRecorder: (beehiveId: string, locationId: string) => void;
+  onBeehiveSelect?: (beehiveId: string) => void;
 }
 
-const BeehiveCard: React.FC<BeehiveCardProps> = ({ beehive, onOpenRecorder }) => {
-  const { updateBeehive, deleteBeehive, recordings } = useApp();
+const BeehiveCard: React.FC<BeehiveCardProps> = ({ 
+  beehive, 
+  onOpenRecorder,
+  onBeehiveSelect
+}) => {
+  const { updateBeehive, deleteBeehive, recordings, locations } = useApp();
   const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
   const [name, setName] = useState(beehive.name);
+  const [selectedLocationId, setSelectedLocationId] = useState(beehive.locationId);
   
   const recordingCount = recordings.filter(rec => rec.beehiveId === beehive.id).length;
   
   const handleSave = async () => {
     if (name.trim()) {
       try {
-        await updateBeehive(beehive.id, name.trim());
+        await updateBeehive(beehive.id, name.trim(), selectedLocationId);
         setOpenEdit(false);
       } catch (error) {
         // Error is already handled in the context
@@ -39,16 +46,22 @@ const BeehiveCard: React.FC<BeehiveCardProps> = ({ beehive, onOpenRecorder }) =>
     await deleteBeehive(beehive.id);
     setOpenDelete(false);
   };
+
+  const handleCardClick = () => {
+    if (onBeehiveSelect) {
+      onBeehiveSelect(beehive.id);
+    }
+  };
   
   return (
     <>
       <Card className="animate-fade-in card-hover">
         <CardContent className="p-4">
           <div className="flex justify-between items-center">
-            <div>
+            <div className={onBeehiveSelect ? "cursor-pointer" : ""} onClick={handleCardClick}>
               <h3 className="font-medium text-lg">{beehive.name}</h3>
               <p className="text-sm text-muted-foreground">
-                {recordingCount} {recordingCount === 1 ? t('recording') : t('recording')}
+                {recordingCount} {recordingCount === 1 ? t('recording') : t('recordings')}
               </p>
             </div>
             <Button 
@@ -68,7 +81,7 @@ const BeehiveCard: React.FC<BeehiveCardProps> = ({ beehive, onOpenRecorder }) =>
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={() => setOpenEdit(true)} 
+            onClick={(e) => { e.stopPropagation(); setOpenEdit(true); }} 
             className="h-8"
           >
             <Edit size={16} className="mr-1" /> {t('edit')}
@@ -76,7 +89,7 @@ const BeehiveCard: React.FC<BeehiveCardProps> = ({ beehive, onOpenRecorder }) =>
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={() => setOpenDelete(true)} 
+            onClick={(e) => { e.stopPropagation(); setOpenDelete(true); }} 
             className="h-8 text-destructive hover:text-destructive"
           >
             <Trash size={16} className="mr-1" /> {t('delete')}
@@ -99,6 +112,24 @@ const BeehiveCard: React.FC<BeehiveCardProps> = ({ beehive, onOpenRecorder }) =>
                 onChange={(e) => setName(e.target.value)}
                 placeholder={t('name')}
               />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="location">{t('location')}</Label>
+              <Select
+                value={selectedLocationId}
+                onValueChange={setSelectedLocationId}
+              >
+                <SelectTrigger id="location">
+                  <SelectValue placeholder={t('selectLocation')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {locations.map(location => (
+                    <SelectItem key={location.id} value={location.id}>
+                      {location.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>
