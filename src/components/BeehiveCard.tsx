@@ -53,19 +53,27 @@ const BeehiveCard: React.FC<BeehiveCardProps> = ({
     }
   };
   
+  const handleRecordClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onOpenRecorder(beehive.id, beehive.locationId);
+  };
+  
   return (
     <>
       <Card className="animate-fade-in card-hover">
         <CardContent className="p-4">
           <div className="flex justify-between items-center">
-            <div className={onBeehiveSelect ? "cursor-pointer" : ""} onClick={handleCardClick}>
+            <div 
+              className={onBeehiveSelect ? "cursor-pointer flex-1" : "flex-1"} 
+              onClick={handleCardClick}
+            >
               <h3 className="font-medium text-lg">{beehive.name}</h3>
               <p className="text-sm text-muted-foreground">
                 {recordingCount} {recordingCount === 1 ? t('recording') : t('recordings')}
               </p>
             </div>
             <Button 
-              onClick={() => onOpenRecorder(beehive.id, beehive.locationId)}
+              onClick={handleRecordClick}
               className="rounded-full w-10 h-10 p-0 record-button"
             >
               <span className="sr-only">{t('recordNew')}</span>

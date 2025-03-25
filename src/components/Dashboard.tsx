@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Mic, Plus, ArrowLeft, Search, RefreshCw, LogOut, MapPin, FileText } from 'lucide-react';
@@ -492,13 +493,34 @@ const Dashboard: React.FC = () => {
         </Tabs>
       )}
       
-      {/* Floating Record Button */}
-      <Button
-        className="fixed bottom-6 right-6 rounded-full w-14 h-14 record-button"
-        onClick={handleAddRecordingClick}
-      >
-        <Mic size={20} />
-      </Button>
+      {/* Action Buttons at bottom-right */}
+      <div className="fixed bottom-6 right-6 flex flex-col gap-3 items-end">
+        <Button
+          className="rounded-full w-12 h-12 shadow-lg"
+          onClick={handleAddLocationClick}
+          variant="outline"
+        >
+          <MapPin size={18} />
+          <span className="sr-only">{t('newLocation')}</span>
+        </Button>
+        
+        <Button
+          className="rounded-full w-12 h-12 shadow-lg"
+          onClick={handleAddBeehiveClick}
+          variant="outline"
+        >
+          <FileText size={18} />
+          <span className="sr-only">{t('newBeehive')}</span>
+        </Button>
+        
+        <Button
+          className="rounded-full w-14 h-14 record-button shadow-lg"
+          onClick={handleAddRecordingClick}
+        >
+          <Mic size={20} />
+          <span className="sr-only">{t('recordNew')}</span>
+        </Button>
+      </div>
       
       {/* Add Location Dialog */}
       <Dialog open={showAddLocation} onOpenChange={setShowAddLocation}>

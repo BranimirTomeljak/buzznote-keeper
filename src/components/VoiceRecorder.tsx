@@ -117,7 +117,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
       <div className="w-full max-w-md bg-white rounded-xl shadow-2xl overflow-hidden animate-scale-in">
         <div className="p-6">
           <h2 className="text-xl font-semibold text-center mb-1">
-            {isRecording ? t('recording') : t('recordingFor')}
+            {isRecording ? t('recordingStatus') : t('recordingFor')}
           </h2>
           <p className="text-center text-muted-foreground mb-6">
             {beehiveName}
