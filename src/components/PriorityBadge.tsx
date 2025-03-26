@@ -16,7 +16,7 @@ const PriorityBadge: React.FC<PriorityBadgeProps> = ({ priority, className = '' 
       case 'high':
         return 'bg-red-100 text-red-800';
       case 'medium':
-        return 'bg-amber-500 text-white';
+        return 'bg-yellow-100 text-yellow-800'; // Changed to lighter yellow
       case 'low':
         return 'bg-green-100 text-green-800';
       case 'solved':
@@ -31,7 +31,7 @@ const PriorityBadge: React.FC<PriorityBadgeProps> = ({ priority, className = '' 
       case 'high':
         return <ArrowUp className="text-red-600" size={14} />;
       case 'medium':
-        return <Info className="text-white" size={14} />;
+        return <Info className="text-yellow-600" size={14} />; // Changed to match yellow
       case 'low':
         return <ArrowDown className="text-green-600" size={14} />;
       case 'solved':

@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -54,7 +55,7 @@ export default {
 				},
 				priority: {
 					high: '#ea384c',
-					medium: '#FFA726',
+					medium: '#FEF7CD', // Changed to very light yellow
 					low: '#FFD54F',
 					solved: '#66BB6A'
 				},

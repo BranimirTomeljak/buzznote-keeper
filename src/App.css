@@ -57,19 +57,19 @@
   }
   
   .priority-high {
-    @apply bg-priority-high text-white;
+    @apply bg-red-100 text-red-800;
   }
   
   .priority-medium {
-    @apply bg-priority-medium text-white;
+    @apply bg-yellow-100 text-yellow-800;
   }
   
   .priority-low {
-    @apply bg-priority-low text-black;
+    @apply bg-green-100 text-green-800;
   }
   
   .priority-solved {
-    @apply bg-priority-solved text-white;
+    @apply bg-blue-100 text-blue-800;
   }
   
   .page-container {
