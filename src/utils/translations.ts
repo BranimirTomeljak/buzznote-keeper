@@ -95,6 +95,7 @@ const translations = {
   recordingStatus: 'Recording...',
   recordingFor: 'Recording for',
   selectPriority: 'Select priority',
+  changePriority: 'Change Priority', // Added the missing translation key
   
   // Priorities
   priorityHigh: 'High',
