@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Mic, Plus, ArrowLeft, Search, RefreshCw, LogOut, MapPin, FileText } from 'lucide-react';
@@ -58,41 +57,34 @@ const Dashboard: React.FC = () => {
   const [selectedLocationForRecording, setSelectedLocationForRecording] = useState<string>('');
   const [syncing, setSyncing] = useState(false);
   
-  // Check if user is authenticated
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/auth');
     }
   }, [user, authLoading, navigate]);
   
-  // Recent and Priority views
   const recentRecordings = sortByDateDesc(recordings);
   const priorityRecordings = sortByPriorityAndDate(recordings);
   
-  // Get beehives for selected location
   const beehivesInLocation = selectedLocationId
     ? getFilteredBeehives(selectedLocationId)
     : [];
   
-  // Get recordings for selected beehive
   const beehiveRecordings = selectedBeehiveId
     ? getRecordingsForBeehive(selectedBeehiveId)
     : [];
   const recentBeehiveRecordings = sortByDateDesc(beehiveRecordings);
   const priorityBeehiveRecordings = sortByPriorityAndDate(beehiveRecordings);
     
-  // Handle location selection
   const handleLocationSelect = (locationId: string) => {
     setSelectedLocationId(locationId);
     setSelectedBeehiveId(null);
   };
   
-  // Handle beehive selection
   const handleBeehiveSelect = (beehiveId: string) => {
     setSelectedBeehiveId(beehiveId);
   };
   
-  // Handle back button
   const handleBack = () => {
     if (selectedBeehiveId) {
       setSelectedBeehiveId(null);
@@ -101,7 +93,6 @@ const Dashboard: React.FC = () => {
     }
   };
   
-  // Handle add location
   const handleAddLocation = async () => {
     if (newLocationName.trim()) {
       await addLocation(newLocationName.trim());
@@ -110,7 +101,6 @@ const Dashboard: React.FC = () => {
     }
   };
   
-  // Handle add beehive
   const handleAddBeehive = async () => {
     if (newBeehiveName.trim() && selectedLocationForBeehive) {
       try {
@@ -123,27 +113,23 @@ const Dashboard: React.FC = () => {
     }
   };
   
-  // Handle recording flow start
   const handleOpenRecorder = (beehiveId: string, locationId: string) => {
     setSelectedBeehiveForRecording(beehiveId);
     setSelectedLocationForRecording(locationId);
     setShowRecorder(true);
   };
   
-  // Handle recording completion
   const handleRecordingComplete = async (audioUrl: string, priority: PriorityLevel) => {
     await addRecording(audioUrl, selectedBeehiveForRecording, selectedLocationForRecording, priority);
     setShowRecorder(false);
   };
   
-  // Handle manual sync
   const handleSync = async () => {
     setSyncing(true);
     await syncData(true);
     setSyncing(false);
   };
   
-  // Handle sign out
   const handleSignOut = async () => {
     await signOut();
     toast({
@@ -153,7 +139,6 @@ const Dashboard: React.FC = () => {
     navigate('/auth');
   };
   
-  // Action buttons handlers
   const handleAddLocationClick = () => {
     setShowAddLocation(true);
   };
@@ -178,7 +163,6 @@ const Dashboard: React.FC = () => {
       return;
     }
     
-    // If user is viewing a beehive, use that beehive
     if (selectedBeehiveId) {
       const beehive = getBeehiveById(selectedBeehiveId);
       if (beehive) {
@@ -187,20 +171,17 @@ const Dashboard: React.FC = () => {
       return;
     }
     
-    // If user is viewing a location, use the first beehive from that location
     if (selectedLocationId && beehivesInLocation.length > 0) {
       handleOpenRecorder(beehivesInLocation[0].id, selectedLocationId);
       return;
     }
     
-    // Otherwise use the first beehive
     if (beehives.length > 0) {
       const beehive = beehives[0];
       handleOpenRecorder(beehive.id, beehive.locationId);
     }
   };
   
-  // Render locations list
   const renderLocations = () => {
     if (authLoading) {
       return (
@@ -243,7 +224,6 @@ const Dashboard: React.FC = () => {
     );
   };
   
-  // Render beehives for a selected location
   const renderBeehives = () => {
     const location = getLocationById(selectedLocationId!);
     
@@ -321,7 +301,6 @@ const Dashboard: React.FC = () => {
     );
   };
   
-  // Render recordings for a selected beehive
   const renderBeehiveDetail = () => {
     const beehive = getBeehiveById(selectedBeehiveId!);
     const location = beehive ? getLocationById(beehive.locationId) : null;
@@ -370,7 +349,6 @@ const Dashboard: React.FC = () => {
     );
   };
   
-  // Render recordings based on filter
   const renderRecordings = (filteredRecordings: typeof recordings) => {
     if (authLoading) {
       return (
@@ -444,31 +422,6 @@ const Dashboard: React.FC = () => {
         </div>
       </header>
       
-      {/* Quick action buttons */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        <button 
-          className="action-button" 
-          onClick={handleAddLocationClick}
-        >
-          <MapPin size={18} />
-          <span>{t('newLocation')}</span>
-        </button>
-        <button 
-          className="action-button" 
-          onClick={handleAddBeehiveClick}
-        >
-          <FileText size={18} />
-          <span>{t('newBeehive')}</span>
-        </button>
-        <button 
-          className="action-button" 
-          onClick={handleAddRecordingClick}
-        >
-          <Mic size={18} />
-          <span>{t('recordNew')}</span>
-        </button>
-      </div>
-      
       {selectedBeehiveId ? (
         renderBeehiveDetail()
       ) : (
@@ -493,28 +446,25 @@ const Dashboard: React.FC = () => {
         </Tabs>
       )}
       
-      {/* Action Buttons at bottom-right */}
       <div className="fixed bottom-6 right-6 flex flex-col gap-3 items-end">
         <Button
-          className="rounded-full w-12 h-12 shadow-lg"
+          className="rounded-full w-14 h-14 bg-honey hover:bg-honey-dark text-bee-black shadow-lg"
           onClick={handleAddLocationClick}
-          variant="outline"
         >
-          <MapPin size={18} />
+          <MapPin size={20} />
           <span className="sr-only">{t('newLocation')}</span>
         </Button>
         
         <Button
-          className="rounded-full w-12 h-12 shadow-lg"
+          className="rounded-full w-14 h-14 bg-honey hover:bg-honey-dark text-bee-black shadow-lg"
           onClick={handleAddBeehiveClick}
-          variant="outline"
         >
-          <FileText size={18} />
+          <FileText size={20} />
           <span className="sr-only">{t('newBeehive')}</span>
         </Button>
         
         <Button
-          className="rounded-full w-14 h-14 record-button shadow-lg"
+          className="rounded-full w-14 h-14 bg-honey hover:bg-honey-dark text-bee-black shadow-lg"
           onClick={handleAddRecordingClick}
         >
           <Mic size={20} />
@@ -522,7 +472,6 @@ const Dashboard: React.FC = () => {
         </Button>
       </div>
       
-      {/* Add Location Dialog */}
       <Dialog open={showAddLocation} onOpenChange={setShowAddLocation}>
         <DialogContent className="bg-white border-honey/30">
           <DialogHeader>
@@ -545,7 +494,6 @@ const Dashboard: React.FC = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Add Beehive Dialog */}
       <Dialog open={showAddBeehive} onOpenChange={setShowAddBeehive}>
         <DialogContent className="bg-white border-honey/30">
           <DialogHeader>
@@ -592,7 +540,6 @@ const Dashboard: React.FC = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Recording Interface */}
       {showRecorder && (
         <VoiceRecorder
           onRecordingComplete={handleRecordingComplete}
