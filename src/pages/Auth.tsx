@@ -52,7 +52,7 @@ const Auth = () => {
       if (error) throw error;
       
       toast({
-        title: t('signUpSuccess'),
+        title: t('signupSuccess'),
         description: t('checkEmail'),
       });
     } catch (err: any) {
