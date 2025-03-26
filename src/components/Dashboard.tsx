@@ -119,8 +119,9 @@ const Dashboard: React.FC = () => {
     setShowRecorder(true);
   };
   
-  const handleRecordingComplete = async (audioUrl: string, priority: PriorityLevel) => {
-    await addRecording(audioUrl, selectedBeehiveForRecording, selectedLocationForRecording, priority);
+  const handleRecordingComplete = async (audioUrl: string, priority: PriorityLevel, beehiveId: string, locationId: string) => {
+    // Use the beehiveId and locationId passed from the recorder
+    await addRecording(audioUrl, beehiveId, locationId, priority);
     setShowRecorder(false);
   };
   
@@ -163,22 +164,18 @@ const Dashboard: React.FC = () => {
       return;
     }
     
+    // When clicking the recording button, show the recorder with beehive selection
+    // only if we're not already in a beehive detail view
     if (selectedBeehiveId) {
       const beehive = getBeehiveById(selectedBeehiveId);
       if (beehive) {
-        handleOpenRecorder(beehive.id, beehive.locationId);
+        setSelectedBeehiveForRecording(beehive.id);
+        setSelectedLocationForRecording(beehive.locationId);
+        setShowRecorder(true);
       }
-      return;
-    }
-    
-    if (selectedLocationId && beehivesInLocation.length > 0) {
-      handleOpenRecorder(beehivesInLocation[0].id, selectedLocationId);
-      return;
-    }
-    
-    if (beehives.length > 0) {
-      const beehive = beehives[0];
-      handleOpenRecorder(beehive.id, beehive.locationId);
+    } else {
+      // No beehive selected, show recorder with selection
+      setShowRecorder(true);
     }
   };
   
@@ -544,7 +541,10 @@ const Dashboard: React.FC = () => {
         <VoiceRecorder
           onRecordingComplete={handleRecordingComplete}
           onCancel={() => setShowRecorder(false)}
-          beehiveName={getBeehiveById(selectedBeehiveForRecording)?.name || ''}
+          beehiveName={selectedBeehiveId ? getBeehiveById(selectedBeehiveForRecording)?.name : undefined}
+          beehiveId={selectedBeehiveId ? selectedBeehiveForRecording : undefined}
+          locationId={selectedBeehiveId ? selectedLocationForRecording : undefined}
+          showBeehiveSelect={!selectedBeehiveId}
         />
       )}
     </div>

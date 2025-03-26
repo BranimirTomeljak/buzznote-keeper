@@ -1,28 +1,47 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, Square, CheckSquare } from 'lucide-react';
+import { Mic, Square, CheckSquare, ArrowUp, Info, ArrowDown, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PriorityLevel } from '@/types';
 import { t } from '@/utils/translations';
+import { useApp } from '@/contexts/AppContext';
 
 interface VoiceRecorderProps {
-  onRecordingComplete: (audioUrl: string, priority: PriorityLevel) => void;
+  onRecordingComplete: (audioUrl: string, priority: PriorityLevel, beehiveId: string, locationId: string) => void;
   onCancel: () => void;
-  beehiveName: string;
+  beehiveName?: string;
+  beehiveId?: string;
+  locationId?: string;
+  showBeehiveSelect?: boolean;
 }
 
 const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ 
   onRecordingComplete, 
   onCancel,
-  beehiveName
+  beehiveName,
+  beehiveId,
+  locationId,
+  showBeehiveSelect = false
 }) => {
+  const { beehives, locations, getBeehivesByLocation } = useApp();
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioUrl, setAudioUrl] = useState<string>('');
   const [selectedPriority, setSelectedPriority] = useState<PriorityLevel>('medium');
+  const [selectedLocationId, setSelectedLocationId] = useState<string>(locationId || (locations.length > 0 ? locations[0].id : ''));
+  const [selectedBeehiveId, setSelectedBeehiveId] = useState<string>(beehiveId || '');
+  
+  const beehivesInLocation = selectedLocationId ? getBeehivesByLocation(selectedLocationId) : [];
+  
+  // Set initial beehive if location changed and we have beehives
+  useEffect(() => {
+    if (selectedLocationId && beehivesInLocation.length > 0 && !selectedBeehiveId) {
+      setSelectedBeehiveId(beehivesInLocation[0].id);
+    }
+  }, [selectedLocationId, beehivesInLocation, selectedBeehiveId]);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -102,7 +121,16 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
   
   const handleSave = () => {
     if (audioUrl) {
-      onRecordingComplete(audioUrl, selectedPriority);
+      // Use provided beehiveId/locationId or the selected ones
+      const finalBeehiveId = beehiveId || selectedBeehiveId;
+      const finalLocationId = locationId || selectedLocationId;
+      
+      if (!finalBeehiveId || !finalLocationId) {
+        console.error('No beehive or location selected');
+        return;
+      }
+      
+      onRecordingComplete(audioUrl, selectedPriority, finalBeehiveId, finalLocationId);
     }
   };
   
@@ -119,9 +147,53 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
           <h2 className="text-xl font-semibold text-center mb-1">
             {isRecording ? t('recordingStatus') : t('recordingFor')}
           </h2>
-          <p className="text-center text-muted-foreground mb-6">
-            {beehiveName}
-          </p>
+          
+          {showBeehiveSelect && !isRecording ? (
+            <div className="mt-4 mb-6 space-y-4">
+              <div>
+                <Label htmlFor="locationSelect">{t('location')}</Label>
+                <Select
+                  value={selectedLocationId}
+                  onValueChange={setSelectedLocationId}
+                >
+                  <SelectTrigger id="locationSelect" className="mt-2">
+                    <SelectValue placeholder={t('selectLocation')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {locations.map(location => (
+                      <SelectItem key={location.id} value={location.id}>
+                        {location.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="beehiveSelect">{t('beehive')}</Label>
+                <Select
+                  value={selectedBeehiveId}
+                  onValueChange={setSelectedBeehiveId}
+                  disabled={beehivesInLocation.length === 0}
+                >
+                  <SelectTrigger id="beehiveSelect" className="mt-2">
+                    <SelectValue placeholder={t('selectBeehive')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {beehivesInLocation.map(beehive => (
+                      <SelectItem key={beehive.id} value={beehive.id}>
+                        {beehive.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground mb-6">
+              {beehiveName || (selectedBeehiveId && beehives.find(b => b.id === selectedBeehiveId)?.name)}
+            </p>
+          )}
           
           {isRecording ? (
             <div className="flex flex-col items-center justify-center gap-4 mb-8">
@@ -145,41 +217,48 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
                   <audio 
                     src={audioUrl} 
                     controls 
-                    className="w-full h-12 mb-4"
+                    className="w-full h-12 mb-6"
                   />
                   
                   <div className="space-y-4">
-                    <p className="text-sm font-medium">{t('selectPriority')}</p>
-                    <RadioGroup 
-                      value={selectedPriority} 
-                      onValueChange={(value) => setSelectedPriority(value as PriorityLevel)}
-                      className="grid grid-cols-2 gap-4"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="high" id="high" className="text-priority-high" />
-                        <Label htmlFor="high" className="font-normal">
-                          {t('priorityHigh')}
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="medium" id="medium" className="text-priority-medium" />
-                        <Label htmlFor="medium" className="font-normal">
-                          {t('priorityMedium')}
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="low" id="low" className="text-priority-low" />
-                        <Label htmlFor="low" className="font-normal">
-                          {t('priorityLow')}
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="solved" id="solved" className="text-priority-solved" />
-                        <Label htmlFor="solved" className="font-normal">
-                          {t('prioritySolved')}
-                        </Label>
-                      </div>
-                    </RadioGroup>
+                    <p className="text-sm font-medium mb-2">{t('selectPriority')}</p>
+                    <div className="space-y-3">
+                      <button 
+                        onClick={() => setSelectedPriority('high')}
+                        className={`w-full flex items-center gap-3 bg-red-100 text-red-800 p-4 rounded-lg ${selectedPriority === 'high' ? 'ring-2 ring-red-500' : ''}`}
+                      >
+                        <ArrowUp className="text-red-600" size={20} />
+                        <span className="text-left font-medium">{t('priorityHigh')}</span>
+                        {selectedPriority === 'high' && <Check className="ml-auto text-red-600" size={18} />}
+                      </button>
+                      
+                      <button 
+                        onClick={() => setSelectedPriority('medium')}
+                        className={`w-full flex items-center gap-3 bg-amber-500 text-white p-4 rounded-lg ${selectedPriority === 'medium' ? 'ring-2 ring-amber-600' : ''}`}
+                      >
+                        <Info className="text-white" size={20} />
+                        <span className="text-left font-medium">{t('priorityMedium')}</span>
+                        {selectedPriority === 'medium' && <Check className="ml-auto text-white" size={18} />}
+                      </button>
+                      
+                      <button 
+                        onClick={() => setSelectedPriority('low')}
+                        className={`w-full flex items-center gap-3 bg-green-100 text-green-800 p-4 rounded-lg ${selectedPriority === 'low' ? 'ring-2 ring-green-500' : ''}`}
+                      >
+                        <ArrowDown className="text-green-600" size={20} />
+                        <span className="text-left font-medium">{t('priorityLow')}</span>
+                        {selectedPriority === 'low' && <Check className="ml-auto text-green-600" size={18} />}
+                      </button>
+                      
+                      <button 
+                        onClick={() => setSelectedPriority('solved')}
+                        className={`w-full flex items-center gap-3 bg-blue-100 text-blue-800 p-4 rounded-lg ${selectedPriority === 'solved' ? 'ring-2 ring-blue-500' : ''}`}
+                      >
+                        <Check className="text-blue-600" size={20} />
+                        <span className="text-left font-medium">{t('prioritySolved')}</span>
+                        {selectedPriority === 'solved' && <Check className="ml-auto text-blue-600" size={18} />}
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -195,7 +274,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
                 <Button 
                   className="flex-1" 
                   onClick={handleSave}
-                  disabled={!audioUrl}
+                  disabled={!audioUrl || (showBeehiveSelect && (!selectedBeehiveId || !selectedLocationId))}
                 >
                   {t('save')}
                 </Button>
