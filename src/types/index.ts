@@ -1,4 +1,3 @@
-
 export type PriorityLevel = 'high' | 'medium' | 'low' | 'solved';
 
 export interface Recording {
