@@ -37,12 +37,38 @@ export const syncLocations = async (
       const remoteLocation = remoteLocationMap.get(localLocation.id);
       
       if (!remoteLocation) {
-        // Location doesn't exist remotely, add it
-        locationsToAdd.push({
-          id: localLocation.id,
-          name: localLocation.name,
-          user_id: userId,
-        });
+        // Location doesn't exist remotely, check if there's a duplicate ID conflict
+        const { count, error: countError } = await supabase
+          .from('locations')
+          .select('*', { count: 'exact', head: true })
+          .eq('id', localLocation.id);
+          
+        if (countError) {
+          console.error('Error checking for duplicate location:', countError);
+        }
+        
+        // If count > 0, there's a conflict, generate a new ID
+        if (count && count > 0) {
+          const newLocation = {
+            ...localLocation,
+            id: generateId(),
+            user_id: userId
+          };
+          locationsToAdd.push({
+            id: newLocation.id,
+            name: newLocation.name,
+            user_id: userId,
+          });
+          // Update the localLocation ID to match the new ID for the merged result later
+          localLocation.id = newLocation.id;
+        } else {
+          // No conflict, add it with the original ID
+          locationsToAdd.push({
+            id: localLocation.id,
+            name: localLocation.name,
+            user_id: userId,
+          });
+        }
       } else if (remoteLocation.name !== localLocation.name) {
         // Location exists but has been updated locally
         locationsToUpdate.push({
@@ -58,18 +84,24 @@ export const syncLocations = async (
     
     // Any locations still in the map only exist remotely
     const remoteOnlyLocations = Array.from(remoteLocationMap.values());
-    const remoteOnlyLocationIds = remoteOnlyLocations.map(location => location.id);
     
     // Perform database operations
     let error: string | null = null;
     
     // Add new locations
     if (locationsToAdd.length > 0) {
-      const { error: addError } = await supabase
-        .from('locations')
-        .insert(locationsToAdd);
-        
-      if (addError) error = addError.message;
+      for (const location of locationsToAdd) {
+        const { error: addError } = await supabase
+          .from('locations')
+          .insert([location])
+          .select();
+          
+        if (addError) {
+          console.error('Error adding location:', addError);
+          error = addError.message;
+          break;
+        }
+      }
     }
     
     // Update modified locations
@@ -133,13 +165,39 @@ export const syncBeehives = async (
       const remoteBeehive = remoteBeehiveMap.get(localBeehive.id);
       
       if (!remoteBeehive) {
-        // Beehive doesn't exist remotely, add it
-        beehivesToAdd.push({
-          id: localBeehive.id,
-          name: localBeehive.name,
-          location_id: localBeehive.locationId,
-          user_id: userId,
-        });
+        // Beehive doesn't exist remotely, check for duplicate ID conflict
+        const { count, error: countError } = await supabase
+          .from('beehives')
+          .select('*', { count: 'exact', head: true })
+          .eq('id', localBeehive.id);
+          
+        if (countError) {
+          console.error('Error checking for duplicate beehive:', countError);
+        }
+        
+        // If count > 0, there's a conflict, generate a new ID
+        if (count && count > 0) {
+          const newBeehive = {
+            ...localBeehive,
+            id: generateId(),
+          };
+          beehivesToAdd.push({
+            id: newBeehive.id,
+            name: newBeehive.name,
+            location_id: newBeehive.locationId,
+            user_id: userId,
+          });
+          // Update the localBeehive ID to match the new ID for the merged result later
+          localBeehive.id = newBeehive.id;
+        } else {
+          // No conflict, add it with the original ID
+          beehivesToAdd.push({
+            id: localBeehive.id,
+            name: localBeehive.name,
+            location_id: localBeehive.locationId,
+            user_id: userId,
+          });
+        }
       } else if (
         remoteBeehive.name !== localBeehive.name ||
         remoteBeehive.location_id !== localBeehive.locationId
@@ -165,11 +223,18 @@ export const syncBeehives = async (
     
     // Add new beehives
     if (beehivesToAdd.length > 0) {
-      const { error: addError } = await supabase
-        .from('beehives')
-        .insert(beehivesToAdd);
-        
-      if (addError) error = addError.message;
+      for (const beehive of beehivesToAdd) {
+        const { error: addError } = await supabase
+          .from('beehives')
+          .insert([beehive])
+          .select();
+          
+        if (addError) {
+          console.error('Error adding beehive:', addError);
+          error = addError.message;
+          break;
+        }
+      }
     }
     
     // Update modified beehives
@@ -237,18 +302,47 @@ export const syncRecordings = async (
       const remoteRecording = remoteRecordingMap.get(localRecording.id);
       
       if (!remoteRecording) {
-        // Recording doesn't exist remotely, add it
-        // For now, we'll only store the metadata and not the actual audio
-        recordingsToAdd.push({
-          id: localRecording.id,
-          date: localRecording.date,
-          audio_url: localRecording.audioUrl,
-          priority: localRecording.priority,
-          beehive_id: localRecording.beehiveId,
-          location_id: localRecording.locationId,
-          user_id: userId,
-          created_at: localRecording.createdAt,
-        });
+        // Check for duplicate ID conflict
+        const { count, error: countError } = await supabase
+          .from('recordings')
+          .select('*', { count: 'exact', head: true })
+          .eq('id', localRecording.id);
+          
+        if (countError) {
+          console.error('Error checking for duplicate recording:', countError);
+        }
+        
+        // If count > 0, there's a conflict, generate a new ID
+        if (count && count > 0) {
+          const newRecording = {
+            ...localRecording,
+            id: generateId(),
+          };
+          recordingsToAdd.push({
+            id: newRecording.id,
+            date: newRecording.date,
+            audio_url: newRecording.audioUrl,
+            priority: newRecording.priority,
+            beehive_id: newRecording.beehiveId,
+            location_id: newRecording.locationId,
+            user_id: userId,
+            created_at: newRecording.createdAt,
+          });
+          // Update the localRecording ID to match the new ID for the merged result later
+          localRecording.id = newRecording.id;
+        } else {
+          // No conflict, add it with the original ID
+          recordingsToAdd.push({
+            id: localRecording.id,
+            date: localRecording.date,
+            audio_url: localRecording.audioUrl,
+            priority: localRecording.priority,
+            beehive_id: localRecording.beehiveId,
+            location_id: localRecording.locationId,
+            user_id: userId,
+            created_at: localRecording.createdAt,
+          });
+        }
       } else if (remoteRecording.priority !== localRecording.priority) {
         // Only updating the priority for now
         recordingsToUpdate.push({
@@ -269,11 +363,18 @@ export const syncRecordings = async (
     
     // Add new recordings
     if (recordingsToAdd.length > 0) {
-      const { error: addError } = await supabase
-        .from('recordings')
-        .insert(recordingsToAdd);
-        
-      if (addError) error = addError.message;
+      for (const recording of recordingsToAdd) {
+        const { error: addError } = await supabase
+          .from('recordings')
+          .insert([recording])
+          .select();
+          
+        if (addError) {
+          console.error('Error adding recording:', addError);
+          error = addError.message;
+          break;
+        }
+      }
     }
     
     // Update modified recordings
