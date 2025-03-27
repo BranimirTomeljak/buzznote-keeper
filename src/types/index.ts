@@ -1,6 +1,8 @@
 
 export type PriorityLevel = 'high' | 'medium' | 'low' | 'solved';
 
+export type Language = 'hr' | 'en';
+
 export interface Recording {
   id: string;
   date: string; // Format: dd.mm.yyyy
@@ -22,7 +24,7 @@ export interface Location {
   name: string;
 }
 
-// Helper for Croatian translations
+// Helper for translations
 export interface Translations {
   [key: string]: string;
 }

@@ -2,6 +2,18 @@
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+import { getLanguage } from './utils/translations.ts';
+
+// Initialize language from localStorage or set default
+const initLanguage = () => {
+  if (!localStorage.getItem('language')) {
+    localStorage.setItem('language', 'hr'); // Set Croatian as default
+  }
+  return getLanguage();
+};
+
+// Initialize language before rendering
+initLanguage();
 
 // Register service worker for PWA support
 if ('serviceWorker' in navigator) {
