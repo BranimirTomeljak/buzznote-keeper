@@ -46,22 +46,22 @@ const hrTranslations = {
   signingUp: 'Registracija u tijeku...',
   
   // Navigation
-  locations: 'Lokacije',
+  locations: 'Pčelinjaci',
   recent: 'Nedavno',
   priority: 'Prioritet',
   settings: 'Postavke',
   
   // Locations
-  location: 'Lokacija',
-  newLocation: 'Nova lokacija',
-  editLocation: 'Uredi lokaciju',
-  deleteLocation: 'Izbriši lokaciju',
-  deleteLocationConfirm: 'Jeste li sigurni da želite izbrisati ovu lokaciju? Time ćete izbrisati i sve košnice i snimke na ovoj lokaciji.',
-  locationCreated: 'Lokacija kreirana',
-  locationUpdated: 'Lokacija ažurirana',
-  locationDeleted: 'Lokacija izbrisana',
-  noLocations: 'Nema lokacija',
-  selectLocation: 'Odaberi lokaciju',
+  location: 'Pčelinjak',
+  newLocation: 'Novi pčelinjak',
+  editLocation: 'Uredi pčelinjak',
+  deleteLocation: 'Izbriši pčelinjak',
+  deleteLocationConfirm: 'Jeste li sigurni da želite izbrisati ovaj pčelinjak? Time ćete izbrisati i sve košnice i snimke ovog pčelinjaka.',
+  locationCreated: 'Pčelinjak kreirana',
+  locationUpdated: 'Pčelinjak ažurirana',
+  locationDeleted: 'Pčelinjak izbrisana',
+  noLocations: 'Nema pčelinjaka',
+  selectLocation: 'Odaberi pčelinjak',
   
   // Beehives
   beehive: 'Košnica',

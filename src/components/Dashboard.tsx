@@ -447,7 +447,7 @@ const Dashboard: React.FC = () => {
         </Tabs>
       )}
       
-      <div className="fixed bottom-6 right-6 flex flex-col gap-3 items-end">
+      {/* <div className="fixed bottom-6 right-6 flex flex-col gap-3 items-end">
         <Button
           className="rounded-full w-14 h-14 bg-honey hover:bg-honey-dark text-bee-black shadow-lg"
           onClick={handleAddLocationClick}
@@ -471,7 +471,7 @@ const Dashboard: React.FC = () => {
           <Mic size={20} />
           <span className="sr-only">{t('recordNew')}</span>
         </Button>
-      </div>
+      </div> */}
       
       <Dialog open={showAddLocation} onOpenChange={setShowAddLocation}>
         <DialogContent className="bg-white border-honey/30">
