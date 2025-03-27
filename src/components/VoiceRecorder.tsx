@@ -33,7 +33,11 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
   const [selectedPriority, setSelectedPriority] = useState<PriorityLevel>('medium');
   const [selectedLocationId, setSelectedLocationId] = useState<string>(locationId || (locations.length > 0 ? locations[0].id : ''));
   const [selectedBeehiveId, setSelectedBeehiveId] = useState<string>(beehiveId || '');
-  const [step, setStep] = useState<'select' | 'record' | 'priority'>(beehiveId ? 'record' : 'select');
+  
+  // If beehiveId is provided, skip selection and go straight to recording
+  const [step, setStep] = useState<'select' | 'record' | 'priority'>(
+    beehiveId && locationId ? 'record' : 'select'
+  );
   
   const beehivesInLocation = selectedLocationId ? getBeehivesByLocation(selectedLocationId) : [];
   
@@ -270,7 +274,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
               
               <button 
                 onClick={() => setSelectedPriority('medium')}
-                className={`w-full flex items-center gap-3 bg-yellow-100 text-yellow-800 p-4 rounded-lg ${selectedPriority === 'medium' ? 'ring-2 ring-yellow-500' : ''}`}
+                className={`w-full flex items-center gap-3 bg-yellow-50 text-yellow-800 p-4 rounded-lg ${selectedPriority === 'medium' ? 'ring-2 ring-yellow-500' : ''}`}
               >
                 <Info className="text-yellow-600" size={20} />
                 <span className="text-left font-medium">{t('priorityMedium')}</span>

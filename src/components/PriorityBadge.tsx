@@ -8,15 +8,22 @@ import { t } from '@/utils/translations';
 interface PriorityBadgeProps {
   priority: PriorityLevel;
   className?: string;
+  onClick?: () => void;
+  interactive?: boolean;
 }
 
-const PriorityBadge: React.FC<PriorityBadgeProps> = ({ priority, className = '' }) => {
+const PriorityBadge: React.FC<PriorityBadgeProps> = ({ 
+  priority, 
+  className = '',
+  onClick,
+  interactive = false
+}) => {
   const getPriorityStyles = (priority: PriorityLevel): string => {
     switch (priority) {
       case 'high':
         return 'bg-red-100 text-red-800';
       case 'medium':
-        return 'bg-yellow-100 text-yellow-800'; // Changed to lighter yellow
+        return 'bg-yellow-50 text-yellow-800'; // Changed to very light yellow
       case 'low':
         return 'bg-green-100 text-green-800';
       case 'solved':
@@ -31,7 +38,7 @@ const PriorityBadge: React.FC<PriorityBadgeProps> = ({ priority, className = '' 
       case 'high':
         return <ArrowUp className="text-red-600" size={14} />;
       case 'medium':
-        return <Info className="text-yellow-600" size={14} />; // Changed to match yellow
+        return <Info className="text-yellow-600" size={14} />;
       case 'low':
         return <ArrowDown className="text-green-600" size={14} />;
       case 'solved':
@@ -52,11 +59,16 @@ const PriorityBadge: React.FC<PriorityBadgeProps> = ({ priority, className = '' 
   };
 
   return (
-    <div className={cn(
-      "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium",
-      getPriorityStyles(priority),
-      className
-    )}>
+    <div 
+      className={cn(
+        "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium",
+        getPriorityStyles(priority),
+        interactive && "cursor-pointer hover:opacity-90",
+        className
+      )}
+      onClick={interactive ? onClick : undefined}
+      role={interactive ? "button" : undefined}
+    >
       {getPriorityIcon(priority)}
       <span>{getPriorityText(priority)}</span>
     </div>

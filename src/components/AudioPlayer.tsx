@@ -15,31 +15,52 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, className = '' }) =
   const [currentTime, setCurrentTime] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
+  // Reset audio when URL changes
   useEffect(() => {
-    const audio = new Audio(audioUrl);
-    audioRef.current = audio;
+    const setupAudio = () => {
+      // Clean up previous audio instance
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.removeEventListener('loadedmetadata', () => {});
+        audioRef.current.removeEventListener('timeupdate', () => {});
+        audioRef.current.removeEventListener('ended', () => {});
+      }
+      
+      // Create a new audio instance
+      const audio = new Audio();
+      
+      // Set up event listeners before setting the source
+      audio.addEventListener('loadedmetadata', () => {
+        setDuration(audio.duration);
+      });
+      
+      audio.addEventListener('timeupdate', () => {
+        setCurrentTime(audio.currentTime);
+      });
+      
+      audio.addEventListener('ended', () => {
+        setIsPlaying(false);
+        setCurrentTime(0);
+      });
+      
+      // Set the source
+      audio.src = audioUrl;
+      // Preload the audio
+      audio.preload = 'auto';
+      
+      // Store the audio instance
+      audioRef.current = audio;
+    };
     
-    // Set up audio event listeners
-    audio.addEventListener('loadedmetadata', () => {
-      setDuration(audio.duration);
-    });
-    
-    audio.addEventListener('timeupdate', () => {
-      setCurrentTime(audio.currentTime);
-    });
-    
-    audio.addEventListener('ended', () => {
-      setIsPlaying(false);
-      setCurrentTime(0);
-    });
+    if (audioUrl) {
+      setupAudio();
+    }
     
     return () => {
-      // Clean up
-      audio.pause();
-      audio.src = '';
-      audio.removeEventListener('loadedmetadata', () => {});
-      audio.removeEventListener('timeupdate', () => {});
-      audio.removeEventListener('ended', () => {});
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+      }
     };
   }, [audioUrl]);
   
@@ -49,7 +70,13 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, className = '' }) =
     if (isPlaying) {
       audioRef.current.pause();
     } else {
-      audioRef.current.play();
+      // Force reload if at the beginning
+      if (currentTime === 0) {
+        audioRef.current.load();
+      }
+      audioRef.current.play().catch(error => {
+        console.error('Error playing audio:', error);
+      });
     }
     
     setIsPlaying(!isPlaying);
@@ -64,6 +91,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, className = '' }) =
   };
   
   const formatTime = (time: number): string => {
+    if (isNaN(time)) return '0:00';
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
