@@ -55,6 +55,7 @@ const BeehiveCard: React.FC<BeehiveCardProps> = ({
   
   const handleRecordClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    // Always pass both beehiveId and locationId when opening the recorder
     onOpenRecorder(beehive.id, beehive.locationId);
   };
   

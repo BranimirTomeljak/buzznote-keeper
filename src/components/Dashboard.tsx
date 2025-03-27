@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Mic, Plus, ArrowLeft, Search, RefreshCw, LogOut, MapPin, FileText } from 'lucide-react';
@@ -175,6 +176,9 @@ const Dashboard: React.FC = () => {
       }
     } else {
       // No beehive selected, show recorder with selection
+      // Reset the beehive and location IDs to ensure selection screen shows
+      setSelectedBeehiveForRecording('');
+      setSelectedLocationForRecording('');
       setShowRecorder(true);
     }
   };
@@ -542,9 +546,9 @@ const Dashboard: React.FC = () => {
           onRecordingComplete={handleRecordingComplete}
           onCancel={() => setShowRecorder(false)}
           beehiveName={selectedBeehiveId ? getBeehiveById(selectedBeehiveForRecording)?.name : undefined}
-          beehiveId={selectedBeehiveId ? selectedBeehiveForRecording : undefined}
-          locationId={selectedBeehiveId ? selectedLocationForRecording : undefined}
-          showBeehiveSelect={!selectedBeehiveId}
+          beehiveId={selectedBeehiveForRecording || undefined}
+          locationId={selectedLocationForRecording || undefined}
+          showBeehiveSelect={!selectedBeehiveForRecording || !selectedLocationForRecording}
         />
       )}
     </div>

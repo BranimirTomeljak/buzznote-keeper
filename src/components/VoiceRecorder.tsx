@@ -324,9 +324,16 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="w-full max-w-md bg-white rounded-xl shadow-2xl overflow-hidden animate-scale-in">
-        {step === 'select' && renderBeehiveSelection()}
-        {step === 'record' && renderRecording()}
-        {step === 'priority' && renderPrioritySelection()}
+        {step === 'select' && !showBeehiveSelect && beehiveId && locationId ? (
+          // Skip to recording if beehive and location are already provided
+          <>{setStep('record')}</>
+        ) : (
+          <>
+            {step === 'select' && renderBeehiveSelection()}
+            {step === 'record' && renderRecording()}
+            {step === 'priority' && renderPrioritySelection()}
+          </>
+        )}
       </div>
     </div>
   );
