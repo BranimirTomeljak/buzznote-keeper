@@ -112,8 +112,8 @@ const hrTranslations = {
   
   // Sorting
   sort: 'Sortiraj',
-  nameAscending: 'Ime uzlazno (A-Ž)',
-  nameDescending: 'Ime silazno (Ž-A)',
+  nameAscending: 'A do Z',
+  nameDescending: 'Z do A',
   
   // Validation
   nameExists: 'Naziv već postoji',
