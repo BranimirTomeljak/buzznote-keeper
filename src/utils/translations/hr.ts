@@ -57,9 +57,9 @@ const hrTranslations = {
   editLocation: 'Uredi pčelinjak',
   deleteLocation: 'Izbriši pčelinjak',
   deleteLocationConfirm: 'Jeste li sigurni da želite izbrisati ovaj pčelinjak? Time ćete izbrisati i sve košnice i snimke ovog pčelinjaka.',
-  locationCreated: 'Pčelinjak kreirana',
-  locationUpdated: 'Pčelinjak ažurirana',
-  locationDeleted: 'Pčelinjak izbrisana',
+  locationCreated: 'Pčelinjak kreiran',
+  locationUpdated: 'Pčelinjak ažuriran',
+  locationDeleted: 'Pčelinjak izbrisan',
   noLocations: 'Nema pčelinjaka',
   selectLocation: 'Odaberi pčelinjak',
   
