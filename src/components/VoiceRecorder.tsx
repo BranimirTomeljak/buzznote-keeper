@@ -71,10 +71,21 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
         
         mediaRecorder.onstop = () => {
           const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-          const audioUrl = URL.createObjectURL(audioBlob);
           
-          setAudioBlob(audioBlob);
-          setAudioUrl(audioUrl);
+          // Create a temporary URL for preview
+          const tempUrl = URL.createObjectURL(audioBlob);
+          setAudioUrl(tempUrl);
+          
+          // Convert to base64 for persistent storage
+          const reader = new FileReader();
+          reader.readAsDataURL(audioBlob);
+          reader.onloadend = () => {
+            const base64data = reader.result as string;
+            // Store the base64 data for when save is clicked
+            setAudioBlob(audioBlob);
+            setAudioUrl(base64data);
+          };
+          
           audioChunksRef.current = [];
           setStep('priority');
         };

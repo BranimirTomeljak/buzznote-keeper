@@ -13,10 +13,43 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, className = '' }) =
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
+  const [localAudioUrl, setLocalAudioUrl] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  
+  // Convert base64 to blob URL if needed
+  useEffect(() => {
+    if (!audioUrl) return;
+    
+    // Check if the URL starts with "data:" or "blob:" to determine if it's a base64 string or already a blob URL
+    if (audioUrl.startsWith('data:')) {
+      // It's already a data URL, use it directly
+      setLocalAudioUrl(audioUrl);
+    } else if (audioUrl.startsWith('blob:')) {
+      // It's already a blob URL, use it directly
+      setLocalAudioUrl(audioUrl);
+    } else {
+      // Assume it's a base64 string without the data URL prefix
+      try {
+        const dataUrl = `data:audio/wav;base64,${audioUrl}`;
+        setLocalAudioUrl(dataUrl);
+      } catch (error) {
+        console.error('Error creating audio URL:', error);
+        setLocalAudioUrl(null);
+      }
+    }
+    
+    return () => {
+      // Clean up blob URL if we created one
+      if (localAudioUrl && localAudioUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(localAudioUrl);
+      }
+    };
+  }, [audioUrl]);
   
   // Reset audio when URL changes
   useEffect(() => {
+    if (!localAudioUrl) return;
+    
     const setupAudio = () => {
       // Clean up previous audio instance
       if (audioRef.current) {
@@ -44,7 +77,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, className = '' }) =
       });
       
       // Set the source
-      audio.src = audioUrl;
+      audio.src = localAudioUrl;
       // Preload the audio
       audio.preload = 'auto';
       
@@ -52,9 +85,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, className = '' }) =
       audioRef.current = audio;
     };
     
-    if (audioUrl) {
-      setupAudio();
-    }
+    setupAudio();
     
     return () => {
       if (audioRef.current) {
@@ -62,7 +93,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, className = '' }) =
         audioRef.current.src = '';
       }
     };
-  }, [audioUrl]);
+  }, [localAudioUrl]);
   
   const togglePlayPause = () => {
     if (!audioRef.current) return;
@@ -104,6 +135,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, className = '' }) =
           onClick={togglePlayPause}
           className="w-10 h-10 flex items-center justify-center rounded-full bg-primary text-white hover:bg-primary/90 transition-colors"
           aria-label={isPlaying ? t('pause') : t('play')}
+          disabled={!localAudioUrl}
         >
           {isPlaying ? <Pause size={20} /> : <Play size={20} />}
         </button>
@@ -115,6 +147,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, className = '' }) =
             step={0.1}
             onValueChange={handleSliderChange}
             className="cursor-pointer"
+            disabled={!localAudioUrl}
           />
         </div>
         

@@ -44,7 +44,7 @@ interface AppContextType {
   getBeehivesByLocation: (locationId: string) => Beehive[];
   
   // Recording actions
-  addRecording: (audioUrl: string, beehiveId: string, locationId: string, priority: PriorityLevel) => Promise<Recording>;
+  addRecording: (audioData: string, beehiveId: string, locationId: string, priority: PriorityLevel) => Promise<Recording>;
   deleteRecording: (id: string) => Promise<void>;
   updateRecordingPriority: (id: string, priority: PriorityLevel) => Promise<void>;
   
@@ -342,7 +342,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
   
   const addRecording = async (
-    audioUrl: string, 
+    audioData: string, 
     beehiveId: string, 
     locationId: string, 
     priority: PriorityLevel
@@ -350,7 +350,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const newRecording: Recording = {
       id: generateId(),
       date: getFormattedDate(),
-      audioUrl,
+      audioUrl: audioData,
       priority,
       beehiveId,
       locationId,
@@ -372,18 +372,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
   
   const deleteRecording = async (id: string): Promise<void> => {
-    const recording = recordings.find(r => r.id === id);
-    if (recording) {
-      try {
-        URL.revokeObjectURL(recording.audioUrl);
-      } catch (e) {
-        console.error('Error revoking URL:', e);
-      }
-    }
-    
     setRecordings(prev => prev.filter(recording => recording.id !== id));
     
-    if (user && recording) {
+    if (user) {
       try {
         await deleteFromRemote('recording', id, user.id);
       } catch (error) {

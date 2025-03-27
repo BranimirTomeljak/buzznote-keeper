@@ -1,9 +1,10 @@
+
 export type PriorityLevel = 'high' | 'medium' | 'low' | 'solved';
 
 export interface Recording {
   id: string;
   date: string; // Format: dd.mm.yyyy
-  audioUrl: string;
+  audioUrl: string; // Can be a base64 string or a blob URL
   priority: PriorityLevel;
   beehiveId: string;
   locationId: string;
