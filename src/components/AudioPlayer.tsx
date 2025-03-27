@@ -14,6 +14,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, className = '' }) =
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [localAudioUrl, setLocalAudioUrl] = useState<string | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
   // Convert base64 to blob URL if needed
@@ -64,16 +65,32 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, className = '' }) =
       
       // Set up event listeners before setting the source
       audio.addEventListener('loadedmetadata', () => {
-        setDuration(audio.duration);
+        setIsLoaded(true);
+        if (isFinite(audio.duration)) {
+          setDuration(audio.duration);
+        } else {
+          setDuration(0);
+          console.warn('Invalid audio duration detected');
+        }
       });
       
       audio.addEventListener('timeupdate', () => {
-        setCurrentTime(audio.currentTime);
+        if (isFinite(audio.currentTime)) {
+          setCurrentTime(audio.currentTime);
+        } else {
+          setCurrentTime(0);
+        }
       });
       
       audio.addEventListener('ended', () => {
         setIsPlaying(false);
         setCurrentTime(0);
+      });
+      
+      audio.addEventListener('error', (e) => {
+        console.error('Audio error:', e);
+        setIsLoaded(false);
+        setDuration(0);
       });
       
       // Set the source
@@ -96,7 +113,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, className = '' }) =
   }, [localAudioUrl]);
   
   const togglePlayPause = () => {
-    if (!audioRef.current) return;
+    if (!audioRef.current || !isLoaded) return;
     
     if (isPlaying) {
       audioRef.current.pause();
@@ -114,7 +131,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, className = '' }) =
   };
   
   const handleSliderChange = (value: number[]) => {
-    if (!audioRef.current) return;
+    if (!audioRef.current || !isLoaded) return;
     
     const newTime = value[0];
     audioRef.current.currentTime = newTime;
@@ -122,7 +139,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, className = '' }) =
   };
   
   const formatTime = (time: number): string => {
-    if (isNaN(time)) return '0:00';
+    if (!isFinite(time) || isNaN(time)) return '0:00';
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
@@ -135,7 +152,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, className = '' }) =
           onClick={togglePlayPause}
           className="w-10 h-10 flex items-center justify-center rounded-full bg-primary text-white hover:bg-primary/90 transition-colors"
           aria-label={isPlaying ? t('pause') : t('play')}
-          disabled={!localAudioUrl}
+          disabled={!localAudioUrl || !isLoaded}
         >
           {isPlaying ? <Pause size={20} /> : <Play size={20} />}
         </button>
@@ -147,7 +164,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, className = '' }) =
             step={0.1}
             onValueChange={handleSliderChange}
             className="cursor-pointer"
-            disabled={!localAudioUrl}
+            disabled={!localAudioUrl || !isLoaded}
           />
         </div>
         
