@@ -36,13 +36,13 @@ const RecordingCard: React.FC<RecordingCardProps> = ({ recording, showBeehive = 
   };
   
   return (
-    <Card className="animate-fade-in card-hover overflow-hidden text-lg">
+    <Card className="animate-fade-in card-hover overflow-hidden text-xl">
       <CardContent className="p-6">
         <div className="flex justify-between items-start mb-4">
           <div>
-            <div className="font-medium text-xl">{recording.date}</div>
+            <div className="font-medium text-2xl">{recording.date}</div>
             {showBeehive && beehive && (
-              <div className="text-base text-muted-foreground">
+              <div className="text-lg text-muted-foreground">
                 {beehive.name} {location && <span>{t('from')} {location.name}</span>}
               </div>
             )}
@@ -57,9 +57,9 @@ const RecordingCard: React.FC<RecordingCardProps> = ({ recording, showBeehive = 
               onClick={() => setShowDeleteDialog(true)} 
               variant="destructive"
               size="icon"
-              className="h-10 w-10"
+              className="h-12 w-12"
             >
-              <Trash size={20} />
+              <Trash size={24} />
             </Button>
           </div>
         </div>
@@ -68,16 +68,16 @@ const RecordingCard: React.FC<RecordingCardProps> = ({ recording, showBeehive = 
       
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent className="text-lg">
+        <AlertDialogContent className="text-xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl">{t('deleteRecording')}</AlertDialogTitle>
-            <AlertDialogDescription className="text-base">
+            <AlertDialogTitle className="text-2xl">{t('deleteRecording')}</AlertDialogTitle>
+            <AlertDialogDescription className="text-lg">
               {t('deleteRecordingConfirm')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="text-base">{t('cancel')}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground text-base">
+            <AlertDialogCancel className="text-lg py-3">{t('cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground text-lg py-3">
               {t('delete')}
             </AlertDialogAction>
           </AlertDialogFooter>

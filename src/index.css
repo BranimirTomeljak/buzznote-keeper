@@ -43,6 +43,7 @@
   body {
     @apply bg-background text-foreground antialiased bg-honeycomb-pattern bg-fixed;
     font-feature-settings: "rlig" 1, "calt" 1;
+    font-size: 18px;
   }
 
   /* Hide scrollbars but keep functionality */
@@ -62,7 +63,7 @@
   }
   
   .priority-medium {
-    @apply bg-priority-medium text-white;
+    @apply bg-priority-medium text-black;
   }
   
   .priority-low {
@@ -95,5 +96,32 @@
   
   .action-button {
     @apply flex items-center justify-center gap-2 bg-honey hover:bg-honey-dark text-bee-black font-medium rounded-lg py-3 px-4 transition-all duration-200 shadow-md hover:shadow-lg;
+  }
+}
+
+/* Mobile-specific styles for better readability */
+@media (max-width: 768px) {
+  body {
+    font-size: 20px;
+  }
+  
+  button, a, input, select, .btn {
+    @apply min-h-12 min-w-12 py-3;
+  }
+  
+  .page-container {
+    @apply px-3 py-4;
+  }
+  
+  h1 {
+    @apply text-3xl;
+  }
+  
+  h2 {
+    @apply text-2xl;
+  }
+  
+  .text-sm {
+    @apply text-base;
   }
 }

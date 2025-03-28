@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -42,6 +43,7 @@
   body {
     @apply bg-background text-foreground antialiased bg-honeycomb-pattern bg-fixed;
     font-feature-settings: "rlig" 1, "calt" 1;
+    font-size: 18px;
   }
 
   /* Hide scrollbars but keep functionality */
@@ -57,19 +59,19 @@
   }
   
   .priority-high {
-    @apply bg-red-100 text-red-800;
+    @apply bg-red-600 text-white;
   }
   
   .priority-medium {
-    @apply bg-yellow-100 text-yellow-800;
+    @apply bg-yellow-400 text-black;
   }
   
   .priority-low {
-    @apply bg-green-100 text-green-800;
+    @apply bg-green-500 text-black;
   }
   
   .priority-solved {
-    @apply bg-blue-100 text-blue-800;
+    @apply bg-blue-600 text-white;
   }
   
   .page-container {
@@ -94,5 +96,16 @@
   
   .action-button {
     @apply flex items-center justify-center gap-2 bg-honey hover:bg-honey-dark text-bee-black font-medium rounded-lg py-3 px-4 transition-all duration-200 shadow-md hover:shadow-lg;
+  }
+}
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+  button, a, input, select {
+    @apply min-h-12 py-3;
+  }
+  
+  .page-container {
+    @apply px-3 py-4;
   }
 }
