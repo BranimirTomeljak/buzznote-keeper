@@ -124,4 +124,17 @@
   .text-sm {
     @apply text-base;
   }
+  
+  /* Specific styles for tabs to match the screenshot */
+  [role="tablist"] {
+    @apply h-16 !important;
+  }
+  
+  [role="tab"] {
+    @apply py-3 px-5 text-lg !important;
+  }
+  
+  [data-state="active"] {
+    @apply bg-honey text-bee-black !important;
+  }
 }

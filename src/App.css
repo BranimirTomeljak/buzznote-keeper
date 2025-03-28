@@ -108,4 +108,17 @@
   .page-container {
     @apply px-3 py-4;
   }
+  
+  /* Specific styles for tabs to match the screenshot */
+  .tabs-list {
+    @apply h-16 !important;
+  }
+  
+  .tabs-trigger {
+    @apply py-3 px-5 text-lg !important;
+  }
+  
+  [data-state=active] {
+    @apply bg-honey text-bee-black !important;
+  }
 }
