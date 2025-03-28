@@ -1,11 +1,12 @@
 
 // Service worker for BuzzNotes PWA
 
-const CACHE_NAME = 'buzznotes-v1';
+const CACHE_NAME = 'buzznotes-v2'; // Updated cache version
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/favicon.ico',
   '/icons/apple-touch-icon.png',
   '/icons/icon-72x72.png',
   '/icons/icon-96x96.png',
@@ -20,104 +21,71 @@ const ASSETS_TO_CACHE = [
 
 // Install event - caches static assets
 self.addEventListener('install', (event) => {
+  console.log('[ServiceWorker] Install');
+  self.skipWaiting(); // Force activation
   event.waitUntil(
-    (async () => {
-      const cache = await caches.open(CACHE_NAME);
-      await cache.addAll(ASSETS_TO_CACHE);
-      await self.skipWaiting();
-    })()
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log('[ServiceWorker] Caching app shell');
+      return cache.addAll(ASSETS_TO_CACHE);
+    })
   );
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
+  console.log('[ServiceWorker] Activate');
   event.waitUntil(
-    (async () => {
-      const cacheNames = await caches.keys();
-      await Promise.all(
-        cacheNames
-          .filter((name) => name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
+    caches.keys().then((keyList) => {
+      return Promise.all(
+        keyList.map((key) => {
+          if (key !== CACHE_NAME) {
+            console.log('[ServiceWorker] Removing old cache', key);
+            return caches.delete(key);
+          }
+        })
       );
-      await self.clients.claim();
-    })()
+    }).then(() => {
+      console.log('[ServiceWorker] Claiming clients');
+      return self.clients.claim();
+    })
   );
 });
 
-// Fetch event - serve from cache or network
+// Fetch event - network first strategy for dynamic content
 self.addEventListener('fetch', (event) => {
+  // Skip cross-origin requests
+  if (!event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+
+  // For navigation requests (HTML pages)
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      (async () => {
-        try {
-          // Try to use the navigation preload response if it's supported
-          const preloadResponse = await event.preloadResponse;
-          if (preloadResponse) {
-            return preloadResponse;
-          }
-
-          // Fall back to network
-          return await fetch(event.request);
-        } catch (error) {
-          // If both network and preload fail, serve from cache
-          const cache = await caches.open(CACHE_NAME);
-          return await cache.match('/index.html') || new Response('Offline', {
-            status: 503,
-            statusText: 'Service Unavailable',
-          });
-        }
-      })()
+      fetch(event.request).catch(() => {
+        return caches.match('/index.html');
+      })
     );
-  } else if (event.request.destination === 'audio') {
-    // For audio files, use network first, then cache
-    event.respondWith(
-      (async () => {
-        try {
-          const networkResponse = await fetch(event.request);
-          const cache = await caches.open(CACHE_NAME);
-          cache.put(event.request, networkResponse.clone());
-          return networkResponse;
-        } catch (error) {
-          const cachedResponse = await caches.match(event.request);
-          if (cachedResponse) {
-            return cachedResponse;
-          }
-          // If not in cache and network fails, return an empty response
-          return new Response('', {
-            status: 408,
-            statusText: 'Request Timeout',
-          });
-        }
-      })()
-    );
-  } else {
-    // For other requests, try cache first, then network
-    event.respondWith(
-      (async () => {
-        const cachedResponse = await caches.match(event.request);
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-        try {
-          const networkResponse = await fetch(event.request);
-          if (
-            event.request.url.startsWith('http') &&
-            !event.request.url.includes('chrome-extension')
-          ) {
-            const cache = await caches.open(CACHE_NAME);
-            cache.put(event.request, networkResponse.clone());
-          }
-          return networkResponse;
-        } catch (error) {
-          // If cache doesn't exist and network fails
-          return new Response('', {
-            status: 408,
-            statusText: 'Request Timeout',
-          });
-        }
-      })()
-    );
+    return;
   }
+
+  // For other requests, try network first, then fallback to cache
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        // Cache the response for future use
+        if (response.status === 200) {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
+        }
+        return response;
+      })
+      .catch(() => {
+        console.log('[ServiceWorker] Serving from cache');
+        return caches.match(event.request);
+      })
+  );
 });
 
 // This handles message events from the app
