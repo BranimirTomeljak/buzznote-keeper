@@ -2,11 +2,13 @@
 {
   "name": "BuzzNotes",
   "short_name": "BuzzNotes",
-  "description": "Voice note management app for beekeepers",
+  "description": "Aplikacija za upravljanje glasovnim bilješkama za pčelare",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#4a7eff",
+  "theme_color": "#ffb300",
+  "orientation": "portrait",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "icons/icon-72x72.png",

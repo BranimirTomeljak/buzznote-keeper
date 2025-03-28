@@ -18,7 +18,7 @@ initLanguage();
 // Register service worker for PWA support
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/src/service-worker.ts', { type: 'module' })
+    navigator.serviceWorker.register('/service-worker.js')
       .then(registration => {
         console.log('ServiceWorker registration successful with scope: ', registration.scope);
       })
