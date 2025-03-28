@@ -7,9 +7,9 @@ import LanguageSelector from '@/components/LanguageSelector';
 const Index = () => {
   return (
     <AppProvider>
-      <div className="absolute top-4 right-4 z-50">
+      {/* <div className="absolute top-4 right-4 z-50">
         <LanguageSelector />
-      </div>
+      </div> */}
       <Dashboard />
     </AppProvider>
   );
