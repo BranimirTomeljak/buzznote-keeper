@@ -108,4 +108,17 @@
   .page-container {
     @apply px-3 py-4;
   }
+
+  /* Ensure tab sizing matches the screenshot */
+  [role="tablist"] {
+    @apply h-14 !important;
+  }
+  
+  [role="tab"] {
+    @apply h-full flex-1 text-base;
+  }
+  
+  [role="tab"][data-state="active"] {
+    @apply bg-honey text-bee-black h-full rounded-md font-semibold;
+  }
 }
