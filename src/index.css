@@ -7,3 +7,14 @@
  * This file imports the base styles.
  * All actual styles are now consolidated in App.css for better maintainability.
  */
+
+:root {
+  --lovable-integration: enabled;
+}
+
+/* Add responsive font scaling for better mobile experience */
+@media (max-width: 640px) {
+  html {
+    font-size: 14px;
+  }
+}
