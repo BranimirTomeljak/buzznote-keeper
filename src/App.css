@@ -101,15 +101,31 @@
 
 /* Mobile-specific styles */
 @media (max-width: 768px) {
-  button, a, input, select {
-    @apply min-h-12 py-3;
+  body {
+    font-size: 20px;
+  }
+  
+  button, a, input, select, .btn {
+    @apply min-h-12 min-w-12 py-3;
   }
   
   .page-container {
     @apply px-3 py-4;
   }
 
-  /* Ensure tab sizing matches the screenshot */
+  h1 {
+    @apply text-3xl;
+  }
+  
+  h2 {
+    @apply text-2xl;
+  }
+  
+  .text-sm {
+    @apply text-base;
+  }
+
+  /* Tab styles for mobile */
   [role="tablist"] {
     @apply h-14 !important;
   }
