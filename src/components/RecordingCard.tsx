@@ -11,6 +11,7 @@ import PriorityBadge from './PriorityBadge';
 import { t } from '@/utils/translations';
 import PrioritySelector from './PrioritySelector';
 import { Button } from './ui/button';
+import { formatRelativeTime } from '@/utils/helpers';
 
 interface RecordingCardProps {
   recording: Recording;
@@ -18,7 +19,7 @@ interface RecordingCardProps {
 }
 
 const RecordingCard: React.FC<RecordingCardProps> = ({ recording, showBeehive = false }) => {
-  const { deleteRecording, updateRecordingPriority, getBeehiveById, getLocationById } = useApp();
+  const { deleteRecording, updateRecordingPriority, updateRecordingLastListened, getBeehiveById, getLocationById } = useApp();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showPriorityDialog, setShowPriorityDialog] = useState(false);
   
@@ -34,6 +35,10 @@ const RecordingCard: React.FC<RecordingCardProps> = ({ recording, showBeehive = 
     await deleteRecording(recording.id);
     setShowDeleteDialog(false);
   };
+
+  const handleAudioPlay = () => {
+    updateRecordingLastListened(recording.id);
+  };
   
   return (
     <Card className="animate-fade-in card-hover overflow-hidden text-xl">
@@ -44,6 +49,11 @@ const RecordingCard: React.FC<RecordingCardProps> = ({ recording, showBeehive = 
             {showBeehive && beehive && (
               <div className="text-lg text-muted-foreground">
                 {beehive.name} {location && <span>{t('from')} {location.name}</span>}
+              </div>
+            )}
+            {recording.lastListened && (
+              <div className="text-sm text-muted-foreground mt-1">
+                {t('lastListened')}: {formatRelativeTime(recording.lastListened)}
               </div>
             )}
           </div>
@@ -63,7 +73,7 @@ const RecordingCard: React.FC<RecordingCardProps> = ({ recording, showBeehive = 
             </Button>
           </div>
         </div>
-        <AudioPlayer audioUrl={recording.audioUrl} />
+        <AudioPlayer audioUrl={recording.audioUrl} onPlay={handleAudioPlay} />
       </CardContent>
       
       {/* Delete Confirmation Dialog */}

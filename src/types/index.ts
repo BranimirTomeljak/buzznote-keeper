@@ -11,6 +11,7 @@ export interface Recording {
   beehiveId: string;
   locationId: string;
   createdAt: number; // timestamp
+  lastListened?: number; // timestamp of when the recording was last listened to
 }
 
 export interface Beehive {

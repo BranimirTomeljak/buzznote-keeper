@@ -1,4 +1,3 @@
-
 const enTranslations = {
   // Common
   appName: 'BuzzNotes',
@@ -127,6 +126,9 @@ const enTranslations = {
   language: 'Language',
   languageHr: 'Croatian',
   languageEn: 'English',
+  
+  // New translation
+  lastListened: 'Last listened',
 };
 
 export default enTranslations;

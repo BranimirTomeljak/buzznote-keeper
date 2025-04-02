@@ -1,4 +1,3 @@
-
 const hrTranslations = {
   // Common
   appName: 'BuzzNotes',
@@ -127,6 +126,9 @@ const hrTranslations = {
   language: 'Jezik',
   languageHr: 'Hrvatski',
   languageEn: 'Engleski',
+  
+  // New translation
+  lastListened: 'Posljednje slušanje',
 };
 
 export default hrTranslations;

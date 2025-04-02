@@ -47,6 +47,7 @@ interface AppContextType {
   addRecording: (audioData: string, beehiveId: string, locationId: string, priority: PriorityLevel) => Promise<Recording>;
   deleteRecording: (id: string) => Promise<void>;
   updateRecordingPriority: (id: string, priority: PriorityLevel) => Promise<void>;
+  updateRecordingLastListened: (id: string) => Promise<void>;
   
   // Navigation
   setActiveTab: (tab: string) => void;
@@ -408,6 +409,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
   
+  const updateRecordingLastListened = async (id: string): Promise<void> => {
+    const now = Date.now();
+    
+    setRecordings(prev => 
+      prev.map(recording => 
+        recording.id === id ? { ...recording, lastListened: now } : recording
+      )
+    );
+    
+    if (user) {
+      try {
+        const updatedRecordings = recordings.map(recording => 
+          recording.id === id ? { ...recording, lastListened: now } : recording
+        );
+        
+        await syncRecordings(updatedRecordings, user.id);
+      } catch (error) {
+        console.error('Error syncing updated recording:', error);
+      }
+    }
+  };
+  
   const getLocationById = (id: string): Location | undefined => {
     return locations.find(location => location.id === id);
   };
@@ -464,6 +487,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addRecording,
     deleteRecording,
     updateRecordingPriority,
+    updateRecordingLastListened,
     
     setActiveTab,
     
