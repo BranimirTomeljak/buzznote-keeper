@@ -7,9 +7,10 @@ import { t } from '@/utils/translations';
 interface AudioPlayerProps {
   audioUrl: string;
   className?: string;
+  onPlay?: () => void;
 }
 
-const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, className = '' }) => {
+const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, className = '', onPlay }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
@@ -125,6 +126,11 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, className = '' }) =
       audioRef.current.play().catch(error => {
         console.error('Error playing audio:', error);
       });
+      
+      // Call the onPlay callback if provided
+      if (onPlay) {
+        onPlay();
+      }
     }
     
     setIsPlaying(!isPlaying);
