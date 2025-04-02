@@ -11,7 +11,7 @@ import PriorityBadge from './PriorityBadge';
 import { t } from '@/utils/translations';
 import PrioritySelector from './PrioritySelector';
 import { Button } from './ui/button';
-import { formatRelativeTime } from '@/utils/helpers';
+import { formatTimestamp } from '@/utils/helpers';
 
 interface RecordingCardProps {
   recording: Recording;
@@ -53,7 +53,7 @@ const RecordingCard: React.FC<RecordingCardProps> = ({ recording, showBeehive = 
             )}
             {recording.lastListened && (
               <div className="text-sm text-muted-foreground mt-1">
-                {t('lastListened')}: {formatRelativeTime(recording.lastListened)}
+                {t('lastListened')}: {formatTimestamp(recording.lastListened)}
               </div>
             )}
           </div>
