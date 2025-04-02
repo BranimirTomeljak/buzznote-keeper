@@ -1,39 +1,33 @@
 
 // Service worker for BuzzNotes PWA
 
-const CACHE_NAME = 'buzznotes-v2'; // Updated cache version
-const ASSETS_TO_CACHE = [
+const CACHE_NAME = 'buzznotes-v3'; // Updated cache version
+const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/favicon.ico',
-  '/icons/apple-touch-icon.png',
-  '/icons/icon-72x72.png',
-  '/icons/icon-96x96.png',
-  '/icons/icon-128x128.png',
-  '/icons/icon-144x144.png',
-  '/icons/icon-152x152.png',
-  '/icons/icon-192x192.png',
-  '/icons/icon-384x384.png',
-  '/icons/icon-512x512.png',
-  '/icons/maskable_icon.png'
+  '/favicon.ico'
 ];
 
-// Install event - caches static assets
+// Install event - cache core assets
 self.addEventListener('install', (event) => {
-  console.log('[ServiceWorker] Install');
+  console.log('[ServiceWorker] Installing');
   self.skipWaiting(); // Force activation
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[ServiceWorker] Caching app shell');
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
+    caches.open(CACHE_NAME)
+      .then((cache) => {
+        console.log('[ServiceWorker] Caching app shell');
+        return cache.addAll(urlsToCache);
+      })
+      .catch(error => {
+        console.error('[ServiceWorker] Install error:', error);
+      })
   );
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log('[ServiceWorker] Activate');
+  console.log('[ServiceWorker] Activating');
   event.waitUntil(
     caches.keys().then((keyList) => {
       return Promise.all(
@@ -44,36 +38,26 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    }).then(() => {
+    })
+    .then(() => {
       console.log('[ServiceWorker] Claiming clients');
       return self.clients.claim();
     })
   );
 });
 
-// Fetch event - network first strategy for dynamic content
+// Fetch event - network first strategy with cache fallback
 self.addEventListener('fetch', (event) => {
   // Skip cross-origin requests
   if (!event.request.url.startsWith(self.location.origin)) {
     return;
   }
 
-  // For navigation requests (HTML pages)
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request).catch(() => {
-        return caches.match('/index.html');
-      })
-    );
-    return;
-  }
-
-  // For other requests, try network first, then fallback to cache
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Cache the response for future use
-        if (response.status === 200) {
+        // Cache the fetched response
+        if (response && response.status === 200) {
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseClone);
@@ -82,8 +66,24 @@ self.addEventListener('fetch', (event) => {
         return response;
       })
       .catch(() => {
-        console.log('[ServiceWorker] Serving from cache');
-        return caches.match(event.request);
+        // Fallback to cache if network fails
+        console.log('[ServiceWorker] Serving from cache for:', event.request.url);
+        return caches.match(event.request)
+          .then((cachedResponse) => {
+            if (cachedResponse) {
+              return cachedResponse;
+            }
+            
+            // For navigation requests, return the cached home page as a fallback
+            if (event.request.mode === 'navigate') {
+              return caches.match('/index.html');
+            }
+            
+            return new Response('Network error', {
+              status: 408,
+              headers: { 'Content-Type': 'text/plain' }
+            });
+          });
       })
   );
 });

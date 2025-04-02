@@ -9,6 +9,7 @@
   "theme_color": "#ffb300",
   "orientation": "portrait",
   "prefer_related_applications": false,
+  "scope": "/",
   "icons": [
     {
       "src": "/icons/icon-72x72.png",
