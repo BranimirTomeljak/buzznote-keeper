@@ -59,13 +59,28 @@ export const sortByPriorityAndDate = (recordings: Recording[]): Recording[] => {
   });
 };
 
-// Sort items by name
+// Sort items by name with proper handling of numeric values
 export const sortByName = <T extends { name: string }>(
   items: T[],
   direction: 'asc' | 'desc' = 'asc'
 ): T[] => {
   return [...items].sort((a, b) => {
-    const comparison = a.name.localeCompare(b.name);
+    // Check if both names start with numbers
+    const aMatch = a.name.match(/^(\d+)/);
+    const bMatch = b.name.match(/^(\d+)/);
+    
+    // If both names start with numbers, compare them numerically
+    if (aMatch && bMatch) {
+      const aNum = parseInt(aMatch[0], 10);
+      const bNum = parseInt(bMatch[0], 10);
+      
+      if (aNum !== bNum) {
+        return direction === 'asc' ? aNum - bNum : bNum - aNum;
+      }
+    }
+    
+    // For all other cases, use standard string comparison
+    const comparison = a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
     return direction === 'asc' ? comparison : -comparison;
   });
 };
