@@ -121,14 +121,12 @@ const hrTranslations = {
   // Audio player
   play: 'Reproduciraj',
   pause: 'Pauziraj',
+  lastListened: 'Preslušano',
 
   // Language
   language: 'Jezik',
   languageHr: 'Hrvatski',
   languageEn: 'Engleski',
-  
-  // New translation
-  lastListened: 'Posljednje slušanje',
 };
 
 export default hrTranslations;
