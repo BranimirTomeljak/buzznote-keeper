@@ -45,14 +45,16 @@ const RecordingCard: React.FC<RecordingCardProps> = ({ recording, showBeehive = 
       <CardContent className="p-6">
         <div className="flex justify-between items-start mb-4">
           <div>
-            <div className="font-medium text-2xl">{recording.date}</div>
+            <div className="font-medium text-xl">
+              {recording.date}
+            </div>
             {showBeehive && beehive && (
               <div className="text-lg text-muted-foreground">
                 {beehive.name} {location && <span>{t('from')} {location.name}</span>}
               </div>
             )}
             {recording.lastListened && (
-              <div className="text-sm text-muted-foreground mt-1">
+              <div className="text-base text-muted-foreground mt-2 font-medium">
                 {t('lastListened')}: {formatTimestamp(recording.lastListened)}
               </div>
             )}
