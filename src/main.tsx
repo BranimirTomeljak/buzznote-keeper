@@ -29,6 +29,18 @@ if ('serviceWorker' in navigator) {
       if (registration.active) {
         registration.update();
       }
+      
+      // Listen for service worker updates
+      registration.addEventListener('updatefound', () => {
+        const newWorker = registration.installing;
+        if (newWorker) {
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              console.log('[ServiceWorker] New content available, please refresh.');
+            }
+          });
+        }
+      });
     } catch (error) {
       console.error('ServiceWorker registration failed: ', error);
     }

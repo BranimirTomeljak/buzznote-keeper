@@ -1,7 +1,7 @@
 
 // Service worker for BuzzNotes PWA
 
-const CACHE_NAME = 'buzznotes-v3'; // Updated cache version
+const CACHE_NAME = 'buzznotes-v4'; // Updated cache version
 const urlsToCache = [
   '/',
   '/index.html',
